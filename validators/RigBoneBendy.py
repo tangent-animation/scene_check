@@ -2,7 +2,7 @@ import re
 import os
 import bpy
 
-from validators.base_validator import BaseValidator
+from scene_check.validators.base_validator import BaseValidator
 
 class RigBoneBendy(BaseValidator):
 	def __init__(self):

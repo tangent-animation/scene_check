@@ -2,7 +2,7 @@ import imp
 from imp import reload
 import os, sys
 
-from validators import base_validator as bv
+from scene_check.validators import base_validator as bv
 reload( bv )
 
 import bpy
@@ -33,7 +33,7 @@ class ValidatorFactory(object):
 		for item in self.modules:
 			modName = item.split('.')[0]
 			if modName == name:
-				impmod = __import__('validators.'+modName, {}, {}, [modName])
+				impmod = __import__('scene_check.validators.'+modName, {}, {}, [modName])
 				reload(impmod)
 				theClass = impmod.__getattribute__( modName )
 				return(theClass)
