@@ -43,8 +43,13 @@ class ValidatorFactory(object):
 
 
 	## ----------------------------------------------------------------------
-	def get_class_names( self ):
-		return self.modules[:]
+	def get_class_names( self, filter=None ):
+		if isinstance( filter, str ):
+			filter = filter.lower()
+			result = [ x for x in self.modules if filter in x.lower() ]
+		else:
+			result = self.modules[:]
+		return result
 
 
 ## ----------------------------------------------------------------------
