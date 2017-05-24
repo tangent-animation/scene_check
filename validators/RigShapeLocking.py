@@ -15,5 +15,5 @@ class RigShapeLocking(BaseValidator):
 		meshes = [ x for x in self.get_objects( type='MESH' ) if x.name.startswith('shape') ]
 		for mesh in meshes:
 			mesh.hide = mesh.hide_select = mesh.hide_render = True
-
-		print( "+ Automatic Shape Hiding: hid {} rig shapes.".format(len(meshes)) )
+			mesh.layers = ( [False] * 19 + [True] )
+		print( "+ Automatic Shape Hiding: hid and layered {} rig shapes.".format(len(meshes)) )
