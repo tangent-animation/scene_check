@@ -5,6 +5,8 @@ import bpy
 from scene_check.validators.base_validator import BaseValidator
 
 class RigBoneBendy(BaseValidator):
+	automatic_fix = True
+
 	def __init__(self):
 		super(RigBoneBendy, self).__init__()
 
@@ -13,7 +15,7 @@ class RigBoneBendy(BaseValidator):
 		if not len(armatures):
 			return
 
-		regex = re.compile( r"^(def)\.([A-Za-z\_]+)\.([CLR])\.([0-9]{3})$" )
+		regex = re.compile( r"^([a-z]{3})\.([A-Za-z\_]+)\.([CLR])\.([0-9]{3})$" )
 
 		for arm in armatures:
 			changed = 0
@@ -21,9 +23,24 @@ class RigBoneBendy(BaseValidator):
 				match = regex.match( bone.name )
 				modified = False
 				## process all non-control bones
-				if not match:
+				if match:
 					if bone.bone.bbone_segments > 1:
-						self.error( ob=arm, subob=bone.name,
-							message="{}::{}: Bone has bendy segments."
-							.format(arm.name, bone.name)
-							)
+						if bone.name.startswith('ctl.'):
+							self.error( ob=arm, subob=bone.name,
+								type='control',
+								message="{}::{}: Control Bone has bendy segments."
+								.format(arm.name, bone.name)
+								)
+						else:
+							if not bone.name.startswith('def.'):
+								self.error( ob=arm, subob=bone.name,
+									message="{}::{}: Non-deform bone has bendy segments."
+									.format(arm.name, bone.name)
+									)
+
+	def automatic_fix_hook( self ):
+		for error in self.errors:
+			if error.type == 'control':
+				error.ob.pose.bones[error.subob].bone.bbone_segments = 1
+				print( "+ Automatically fixed bendy for control bone {}::{}.".format(error.ob.name, error.subob) )
+
