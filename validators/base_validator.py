@@ -1,3 +1,4 @@
+import os
 import bpy
 
 ## ----------------------------------------------------------------------
@@ -16,13 +17,15 @@ class ValidationError( object ):
 		self.type = type
 
 	def __repr__(self):
-		msg = "<< {}: {}".format( self.parent, self.message )
+		msg = "<< "
+		if self.type:
+			msg += "Type: %s" % str( self.type )
 		if self.ob:
 			msg += "\n\tObject: %s" % self.ob.name
 		if self.subob:
-			msg += "\n\tSubob: %s" % str( self.subob )
-		if self.type:
-			msg += "\n\tType: %s" % str( self.type )
+			msg += " Subob: %s" % str( self.subob )
+
+		msg += "\n\t{}: {}".format( self.parent, self.message )
 		msg += " >>"
 		return msg
 
@@ -31,10 +34,32 @@ class ValidationError( object ):
 class BaseValidator( object ):
 	enabled = True
 	automatic_fix = False
+	log_name = 'check_result_log.csv'
 
 	def __init__( self ):
 		self.processed = False
 		self.errors = []
+		self.file_full_path = bpy.path.abspath( bpy.data.filepath )
+		self.dir_name = os.path.dirname( self.file_full_path )
+		self.file_name = os.path.basename( self.file_full_path )
+		self.root_name = self.file_name.partition('.')[0]
+
+		try:
+			self.asset_type = self.root_name[:3]
+		except:
+			self.asset_type = 'unk'
+
+	def __del__( self ):
+		if not self.log_name in bpy.data.texts:
+			log = bpy.data.texts.new( self.log_name )
+		else:
+			log = bpy.data.texts[self.log_name]
+
+		if len( self.errors ):
+			for error in self.errors:
+				log.write( repr(error) + "\n" )
+		else:
+			log.write( '<< {}: Passed >>\n'.format(self.id()) )
 
 	def process( self, scene=None ):
 		if not self.enabled:
