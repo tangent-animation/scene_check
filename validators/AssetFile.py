@@ -74,8 +74,9 @@ class AssetFile(BaseValidator):
 				)
 
 		bad_text_blocks = 0
+		accepted_text_names = { self.log_name, ".snapshot" }
 		for text in bpy.data.texts:
-			if not text.name == self.log_name:
+			if not text.name in accepted_text_names:
 				bad_text_blocks += 1
 
 		if bad_text_blocks:

@@ -15,6 +15,7 @@ class ValidationError( object ):
 		self.message = message
 		self.parent = parent if parent else Error
 		self.type = type
+		self.data = None
 
 	def __repr__(self):
 		msg = "<< "
