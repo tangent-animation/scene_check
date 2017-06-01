@@ -20,23 +20,55 @@ class MeshNonManifold(BaseValidator):
 		print("--== MeshNonManifold is in Beta! ==--")
 
 	def process_hook( self ):
-		for item in self.get_objects( type='MESH' ):
+		context = bpy.context
+		scene   = context.scene
+
+		for item in [ x for x in self.get_objects( type='MESH' ) 
+					 if not x.name.startswith('shape')
+					 and not x.name.count('_proxy')
+					 and not x.name.count('mesh_deform')]:
 			edges = 0
+			edges_data = []
 			verts = 0
+			verts_data = []
+
+			item.hide = False
+			scene.objects.active = item
+			bpy.ops.object.mode_set( mode='OBJECT' )
 
 			bm = bmesh.new()
 			bm.from_mesh( item.data )
 
+			for vert in item.data.vertices:
+				vert.select = False
+
+			for edge in item.data.edges:
+				edge.select = False
+
 			for edge in bm.edges:
-				if not( edge.is_manifold ):
-					edges += 1
-	
+				edge.select = False
+				if not edge.is_manifold:
+					## bugfix: if it's linked to one face only it's a border
+					## edge and not non-manifold
+					if len(edge.link_faces) > 1:
+						edge.select = True
+						edges += 1
+						edges_data.append( edge.index )
+			
 			for vert in bm.verts:
-				if not( vert.is_manifold ):
+				vert.select = False
+				if not vert.is_manifold:
+					vert.select = True
 					verts += 1
+					verts_data.append( vert.index )
+
+			if verts or edges:
+				bm.to_mesh( item.data )
  
 			if verts:
 				self.error(
+					ob=item,
+					data=verts_data,
 					type='MODEL:NONMANIFOLD VERTS',
 					message=('Mesh "{}" contains {} non-manifold vert{}. Please use MeshLint.')
 							.format( item.name, verts, '' if verts == 1 else 's' )
@@ -44,6 +76,8 @@ class MeshNonManifold(BaseValidator):
 
 			if edges:
 				self.error(
+					ob=item,
+					data=edges_data,
 					type='MODEL:NONMANIFOLD EDGES',
 					message=('Mesh "{}" contains {} non-manifold edge{}. Please use MeshLint.')
 							.format( item.name, edges, '' if edges == 1 else 's' )

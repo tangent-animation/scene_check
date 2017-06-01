@@ -43,14 +43,13 @@ class ModelNames(BaseValidator):
 							.format( item.name, item.data.users )
 				)
 
-			if item.name.startswith( 'shape' ):
+			if not item.name.startswith( 'shape' ) and not item.name.startswith( 'geo' ):
 				##!FIXME: Use a regex to really nail down the name format
-				if not item.name.startswith( 'geo' ):
-					self.error(
-						type='MODEL:OBJECT NAME',
-						message=( "{}: name does not begin with geo" )
-								.format( item.name )
-					)
+				self.error(
+					type='MODEL:OBJECT NAME',
+					message=( "{}: name does not begin with geo" )
+							.format( item.name )
+				)
 
 				if not item.data.name.startswith( 'msh' ):
 					self.error(

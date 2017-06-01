@@ -26,7 +26,7 @@ class ImagePaths(BaseValidator):
 			path = bpy.path.abspath( image.filepath ).lower()
 			name = os.path.basename( path )
 
-			if len(path.strip()) == 0 or path == r"t:\t":
+			if len(path.strip()) == 0 or image.filepath == "T:\\T:":
 				self.error( ob=image,
 					type='IMAGE:PACKED',
 					message="Image {} packed. Please do not pack images."
