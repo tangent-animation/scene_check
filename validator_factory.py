@@ -63,5 +63,26 @@ class ValidatorFactory(object):
 			result = self.modules[:]
 		return result
 
+	## ----------------------------------------------------------------------
+	def run_all( self, *args, task_filter=None ):
+		result = {
+			'errors':   [],
+			'warnings': [],
+			'valid':    []
+		}
+
+		classes = self.get_class_names( filter=task_filter )
+		if len(args):
+			classes = [ x for x in classes if x in args ]
+
+		for name in classes:
+			inst = self.get_class(name)()
+			inst.process()
+			result['errors'] += inst.errors
+			result['warnings'] += inst.warnings
+		else:
+			result['valid'].append( name )
+
+		return result		
 
 ## ----------------------------------------------------------------------
