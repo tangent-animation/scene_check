@@ -19,12 +19,14 @@ class SurfacingUVs(BaseValidator):
 		super(SurfacingUVs, self).__init__()
 
 	def process_hook( self ):
-		valid_names = { 'vtx','def','shp','deform_mesh','hair','surfacing' }
-
-		for item in self.get_objects(type='MESH'):
+		for item in [ x for x in self.get_objects(type='MESH') 
+						if not x.name.startswith('shape')
+						and not x.name.count('_proxy')
+						and not x.name.count('mesh_deform') ]:
 			if len( item.data.uv_layers ):
 				for layer in item.data.uv_layers:
 					if not layer.name.startswith('uvs'):
+						ob=item,
 						self.error(
 							type='SURFACE:UVS NAME',
 							message=('Mesh "{}" UV Set "{}": Name does not conform to show standards.')
@@ -32,9 +34,10 @@ class SurfacingUVs(BaseValidator):
 						)
 			else:
 				self.error(
+					ob=item,
 					type='SURFACE:UVS NONE',
-					message=('Mesh "{}" Vertex Group "{}": Name does not conform to show standards.')
-							.format( item.name, group.name )
+					message=('Mesh "{}" has no UVs.')
+							.format( item.name )
 				)
 
 
