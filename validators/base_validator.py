@@ -8,17 +8,18 @@ class BVNotProcessed(BVException): pass
 
 
 ## ----------------------------------------------------------------------
-class ValidationError( object ):
-	def __init__( self, ob, subob, message, parent=None, type=None ):
+class ValidationMessage( object ):
+	def __init__( self, ob, subob, message, parent=None, type=None, data=None, error=True ):
 		self.ob = ob
 		self.subob = subob
 		self.message = message
 		self.parent = parent if parent else Error
-		self.type = type
-		self.data = None
+		self._type = type
+		self.data = data
+		self.is_error = error
 
 	def __repr__(self):
-		msg = "<< "
+		msg = "<< {}".format( "Error " if self.is_error else "Warning " )
 		if self.type:
 			msg += "Type: %s" % str( self.type )
 		if self.ob:
@@ -30,6 +31,10 @@ class ValidationError( object ):
 		msg += " >>"
 		return msg
 
+	@property
+	def type( self ):
+		return '' if self._type is None else self._type
+
 
 ## ----------------------------------------------------------------------
 class BaseValidator( object ):
@@ -39,6 +44,7 @@ class BaseValidator( object ):
 
 	def __init__( self ):
 		self.processed = False
+		self.warnings = []
 		self.errors = []
 		self.file_full_path = bpy.path.abspath( bpy.data.filepath )
 		self.dir_name = os.path.dirname( self.file_full_path )
@@ -77,9 +83,14 @@ class BaseValidator( object ):
 			self.automatic_fix_hook()
 			self.scene.update()
 
-	def error(self, ob=None, subob=None, message=None, type=None ):
-		error = ValidationError( ob, subob, message, parent=self.id(), type=type )
+	def error(self, ob=None, subob=None, message=None, type=None, data=None ):
+		error = ValidationMessage( ob, subob, message, parent=self.id(), type=type, data=data )
 		self.errors.append( error )
+
+	def warning(self, ob=None, subob=None, message=None, type=None, data=None ):
+		warning = ValidationMessage( ob, subob, message, parent=self.id(), 
+									type=type, data=data, error=False )
+		self.warnings.append( warning )
 
 	def get_objects( self, type=None ):
 		if self.scene and len(self.scene.objects):
@@ -92,6 +103,11 @@ class BaseValidator( object ):
 		if not self.processed:
 			raise BVNotProcessed
 		return len( self.errors ) == 0
+
+	def has_warnings( self ):
+		if not self.processed:
+			raise BVNotProcessed
+		return len( self.warnings ) == 0
 
 	def id( self ):
 		return self.__class__.__name__
