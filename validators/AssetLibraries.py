@@ -15,7 +15,9 @@ class AssetLibraries(BaseValidator):
 	def process_hook( self ):
 		for lib in bpy.data.libraries:
 			if not (lib.filepath and lib.filepath.startswith('//')):
-				self.error( type='GENERAL:FILE PATHING',
+				self.error(
+					ob=lib.name,
+					type='GENERAL:FILE PATHING',
 					message=('Path is absolute. MUST be relative (library "{}").')
 							 .format( lib.filepath )
 				)

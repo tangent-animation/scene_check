@@ -11,7 +11,7 @@ import bpy
 ## ======================================================================
 ## need to keep this here to keep things we're relying on from
 ## getting garbage collected before they're due
-gc_guard = {}
+gc_guard = { 'result': {'errors':[], 'warnings':[]} }
 
 
 ## ======================================================================
@@ -154,6 +154,39 @@ class KikiValidatorRun(bpy.types.Operator):
 
 
 ## ======================================================================
+class KikiValidatorSelectError(bpy.types.Operator):
+	"""Tooltip"""
+	bl_idname = "kiki.validator_select_error"
+	bl_label = "Validator: Select Error"
+
+	@classmethod
+	def poll(cls, context):
+		return True
+
+	def execute(self, context):
+		scene = context.scene
+		result = gc_guard.get( 'result', {'errors':[], 'warnings':[] } )
+
+		error_count = len( result['errors'] )
+
+		if error_count:
+			index = scene.validator_errors_idx
+			error = result['errors'][index]
+
+			## tricksy
+			# print( "Error: {} ({})".format( error.select_func, type(error.select_func)) )
+			error.select_func(error)
+		else:
+			report_type = { 'ERROR' }
+			self.report( report_type, 'No errors for selection.' )
+
+		return {'FINISHED'}
+
+	def invoke(self, context, event):
+		return self.execute( context )
+
+
+## ======================================================================
 class KikiValidatorPanel(bpy.types.Panel):
 	"""Creates a Panel in the Object properties window"""
 	bl_space_type = 'VIEW_3D'
@@ -179,6 +212,7 @@ class KikiValidatorPanel(bpy.types.Panel):
 			layout.label( 'Validator Errors: {} Found'.format(error_count) )
 			layout.template_list("MESH_UL_ValidatorErrors", "", context.scene, "validator_errors", 
 					context.scene, "validator_errors_idx")
+			layout.operator( 'kiki.validator_select_error' )
 
 		if warning_count:
 			layout.separator()
@@ -187,40 +221,47 @@ class KikiValidatorPanel(bpy.types.Panel):
 					context.scene, "validator_warnings_idx")
 
 
+module_classes = [
+	MESH_UL_ValidatorErrors, 
+	MESH_UL_ValidatorWarnings, 
+	ValidatorList, 
+	KikiValidatorPanel, 
+	KikiValidatorRun,
+	KikiValidatorSelectError,
+]
+
 def register():
 	scene = bpy.context.scene
 
-	for cls in MESH_UL_ValidatorErrors, MESH_UL_ValidatorWarnings, ValidatorList, KikiValidatorPanel, KikiValidatorRun:
+	for cls in module_classes:
 		bpy.utils.register_class( cls )
 
 	bpy.types.Scene.validator_errors           = bpy.props.CollectionProperty( type=ValidatorList )
 	bpy.types.Scene.validator_errors_idx       = bpy.props.IntProperty( default=0, min=0 )
-	bpy.types.Scene.validator_errors_count     = bpy.props.IntProperty( default=0, min=0 )
 
 	bpy.types.Scene.validator_warnings         = bpy.props.CollectionProperty( type=ValidatorList )
 	bpy.types.Scene.validator_warnings_idx     = bpy.props.IntProperty( default=0, min=0 )
-	bpy.types.Scene.validator_warninings_count = bpy.props.IntProperty( default=0, min=0 )
 
 	clear_scene_error_list()
 
 
 def unregister():
-	for cls in MESH_UL_ValidatorErrors, MESH_UL_ValidatorWarnings, ValidatorList, KikiValidatorPanel, KikiValidatorRun:
+	for cls in module_classes:
 		bpy.utils.register_class( cls )
 		try:
 			bpy.utils.unregister_class( cls )
 		except:
 			pass
 
-	try:
-		del bpy.types.Scene.col
-	except:
-		pass
+	Scene = bpy.types.Scene
 
-	try:
-		del bpy.types.Scene.col_idx
-	except:
-		pass
+	for prop in [ 'validator_errors', 'validator_errors_idx', 
+			'validator_warnings', 'validator_warnings_idx' ]:
+		locals_dict = locals()
+		try:
+			exec( 'del Scene.{}'.format(prop), globals(), locals_dict ) 
+		except:
+			pass
 
 
 if __name__ == "__main__":

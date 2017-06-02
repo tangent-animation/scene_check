@@ -53,7 +53,6 @@ class ValidatorFactory(object):
 		## class not found!
 		raise ValidatorFactoryException('Class not found or unloadable: %s.' % name)
 
-
 	## ----------------------------------------------------------------------
 	def get_class_names( self, filter=None ):
 		if isinstance( filter, str ):

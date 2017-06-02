@@ -25,6 +25,7 @@ class AssetGroups(BaseValidator):
 		for group in bpy.data.groups:
 			if group.name in light_rig_names:
 				self.error(
+					ob=group.name,
 					type="GENERAL:REVIEW RIG",
 					message=("Light Rig found (group {}). Please remove.")
 						.format( group.name )
@@ -32,6 +33,7 @@ class AssetGroups(BaseValidator):
 
 			if group.library:
 				self.error(
+					ob=group.name,
 					type="GENERAL:LINKED",
 					message=("A clean asset file should contain NO linked groups "
 							"(Linked group {} found.)")

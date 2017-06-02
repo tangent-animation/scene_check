@@ -1,5 +1,7 @@
 import os
 import bpy
+import bmesh
+from bpy import ops
 
 ## ----------------------------------------------------------------------
 class BVException(Exception): pass
@@ -8,8 +10,212 @@ class BVNotProcessed(BVException): pass
 
 
 ## ----------------------------------------------------------------------
+def update_view():
+	bpy.context.scene.objects.active = bpy.context.scene.objects.active
+
+## ----------------------------------------------------------------------
+def get_editors( type ):
+	editors = []
+
+	for area in bpy.context.screen.areas:
+		if area.type == type:
+			editors.append(area)
+	
+	return editors
+
+## ----------------------------------------------------------------------
+def get_view3ds():
+	return get_editors( 'VIEW_3D' )
+
+## ----------------------------------------------------------------------
+def get_image_editors():
+	return get_editors( 'IMAGE_EDITOR' )
+
+## ----------------------------------------------------------------------
+def sf_null(self):
+	pass
+
+## ----------------------------------------------------------------------
+def sf_object(self):
+	scene = bpy.context.scene
+
+	try:
+		ob = scene.objects[self.ob]
+	except:
+		print( '-- {}: Attempted to select non-existent object {}.'.format(self.parent, self.ob) )
+		return
+
+	for item in scene.objects:
+		vis = item.hide
+		item.hide = False
+		item.select = False
+		item.hide = vis
+
+	ob.hide   = False
+	ob.select = True
+
+	scene.objects.active = ob
+	scene.update()
+
+
+## ----------------------------------------------------------------------
+def sf_image(self):
+	images = bpy.context.images
+
+	try:
+		image = images[self.ob]
+	except:
+		print( '-- {}: Attempted to select non-existent image {}.'.format(self.parent, self.ob) )
+		return
+
+	## SHOTGUN BLAST
+	for ed in get_image_editors:
+		ed.image = image
+
+## ----------------------------------------------------------------------
+def sf_non_manifold(self):
+	scene = bpy.context.scene
+
+	try:
+		ob = scene.objects[self.ob]
+	except:
+		print( '-- {}: Attempted to select non-existent object {}.'.format(self.parent, self.ob) )
+		return	
+
+	if not ob.type == 'MESH':
+		raise ValueError( 'sf_verts: attempted to run on non-mesh object {}.'.format(self.ob) )
+
+	if not self.data or not len(self.data):
+		raise ValueError( 'sf_verts({}): Attempted to select verts with no data (object {}).'
+						  .format(self.parent, self.ob) )
+
+	## select object first
+	sf_object( self )
+
+	ops.object.mode_set( mode='OBJECT' )
+	ops.object.mode_set( mode='EDIT' )
+	ops.mesh.select_mode( use_extend=False, use_expand=False, type='VERT')
+	ops.mesh.select_all( action='DESELECT' )
+
+	ops.mesh.select_non_manifold( extend=False, use_boundary=False )
+
+	update_view()
+
+
+## ----------------------------------------------------------------------
+def sf_verts(self):
+	scene = bpy.context.scene
+
+	try:
+		ob = scene.objects[self.ob]
+	except:
+		print( '-- {}: Attempted to select non-existent object {}.'.format(self.parent, self.ob) )
+		return	
+
+	if not ob.type == 'MESH':
+		raise ValueError( 'sf_verts: attempted to run on non-mesh object {}.'.format(self.ob) )
+
+	## select object first
+	sf_object( self )
+
+	ops.object.mode_set( mode='OBJECT' )
+	ops.object.mode_set( mode='EDIT' )
+	ops.mesh.select_mode( use_extend=False, use_expand=False, type='VERT')
+	ops.mesh.select_all( action='DESELECT' )
+
+	bm = bmesh.new()
+	bm.from_edit_mesh( ob.data )
+
+	for index in self.data:
+		bm.vertices[index].select = True
+
+	update_view()
+
+
+## ----------------------------------------------------------------------
+def sf_edges(self):
+	scene = bpy.context.scene
+
+	try:
+		ob = scene.objects[self.ob]
+	except:
+		print( '-- {}: Attempted to select non-existent object {}.'.format(self.parent, self.ob) )
+		return	
+
+	if not ob.type == 'MESH':
+		raise ValueError( 'sf_edges: attempted to run on non-mesh object {}.'.format(self.ob) )
+
+	## select object first
+	sf_object( self )
+
+	ops.object.mode_set( mode='OBJECT' )
+	ops.object.mode_set( mode='EDIT' )
+	ops.mesh.select_mode( use_extend=False, use_expand=False, type='EDGE')
+	ops.mesh.select_all( action='DESELECT' )
+
+	bm = bmesh.new()
+	bm.from_edit_mesh( ob.data )
+
+	for index in self.data:
+		bm.edges[index].select = True
+
+	update_view()
+
+## ----------------------------------------------------------------------
+def sf_faces(self):
+	scene = bpy.context.scene
+
+	try:
+		ob = scene.objects[self.ob]
+	except:
+		print( '-- {}: Attempted to select non-existent object {}.'.format(self.parent, self.ob) )
+		return	
+
+	if not ob.type == 'MESH':
+		raise ValueError( 'sf_faces: attempted to run on non-mesh object {}.'.format(self.ob) )
+
+	## select object first
+	sf_object( self )
+
+	ops.object.mode_set( mode='OBJECT' )
+	ops.object.mode_set( mode='EDIT' )
+	ops.mesh.select_mode( use_extend=False, use_expand=False, type='FACE')
+	ops.mesh.select_all( action='DESELECT' )
+
+	bm = bmesh.new()
+	bm.from_edit_mesh( ob.data )
+
+	for index in self.data:
+		bm.faces[index].select = True
+
+	update_view()
+
+
+## ----------------------------------------------------------------------
+select_functions =  {
+	'null'         : sf_null,
+	'object'       : sf_object,
+	'image'        : sf_image,
+	'verts'        : sf_verts,
+	'edges'        : sf_edges,
+	'faces'        : sf_faces,
+	'non_manifold' : sf_non_manifold,
+}
+
+## ----------------------------------------------------------------------
 class ValidationMessage( object ):
-	def __init__( self, ob, subob, message, parent=None, type=None, data=None, error=True ):
+	'''
+	When a Validator generates an error or a warning,
+	this class holds the information on the error like
+	which object it occurred on, any sub-objects or
+	components, an optional function to select the
+	offending object, and a human-readable message.
+
+	Should not be instantiated outside of 
+	'''
+
+	def __init__( self, ob, subob, message, parent=None, 
+					type=None, data=None, error=True, select_func=None ):
 		self.ob = ob
 		self.subob = subob
 		self.message = message
@@ -17,13 +223,14 @@ class ValidationMessage( object ):
 		self._type = type
 		self.data = data
 		self.is_error = error
+		self.select_func = sf_null
 
 	def __repr__(self):
 		msg = "<< {}".format( "Error " if self.is_error else "Warning " )
 		if self.type:
 			msg += "Type: %s" % str( self.type )
 		if self.ob:
-			msg += "\n\tObject: %s" % self.ob.name
+			msg += "\n\tObject: %s" % self.ob
 		if self.subob:
 			msg += " Subob: %s" % str( self.subob )
 
@@ -35,6 +242,17 @@ class ValidationMessage( object ):
 	def type( self ):
 		return '' if self._type is None else self._type
 
+	def set_select_func(self, func_name):
+		if func_name is None:
+			self.select_func = sf_null
+
+		elif not func_name in select_functions.keys():
+			raise ValueError( ('ValidationMessage.select_func: can only be set to '
+							  'functions, None, and strings. Found {}.  Valid strings: {}.')
+							  .format( func_name, ', '.join(select_functions.keys()))
+							)
+		else:
+			self.select_func = select_functions[func_name]
 
 ## ----------------------------------------------------------------------
 class BaseValidator( object ):
@@ -83,13 +301,16 @@ class BaseValidator( object ):
 			self.automatic_fix_hook()
 			self.scene.update()
 
-	def error(self, ob=None, subob=None, message=None, type=None, data=None ):
-		error = ValidationMessage( ob, subob, message, parent=self.id(), type=type, data=data )
+	def error(self, ob=None, subob=None, message=None, type=None, data=None, select_func=None ):
+		error = ValidationMessage( ob, subob, message, parent=self.id(),
+								   type=type, data=data )
+		error.set_select_func( select_func )
 		self.errors.append( error )
 
-	def warning(self, ob=None, subob=None, message=None, type=None, data=None ):
+	def warning(self, ob=None, subob=None, message=None, type=None, data=None, select_func=None ):
 		warning = ValidationMessage( ob, subob, message, parent=self.id(), 
-									type=type, data=data, error=False )
+									 type=type, data=data, error=False, select_func=select_func )
+		warning.set_select_func( select_func )
 		self.warnings.append( warning )
 
 	def get_objects( self, type=None ):

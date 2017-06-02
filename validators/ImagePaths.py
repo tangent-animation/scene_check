@@ -15,7 +15,8 @@ class ImagePaths(BaseValidator):
 
 		for image in bpy.data.images:
 			if image.is_dirty:
-				self.error( ob=image,
+				self.error( ob=image.name,
+					select_func='image',
 					type='IMAGE:TEXTURE - PACKED',
 					message=( 'Image {} is packed with unsaved changes. '
 							  'Please do not pack images into files.' )
@@ -27,7 +28,8 @@ class ImagePaths(BaseValidator):
 			name = os.path.basename( path )
 
 			if len(path.strip()) == 0 or image.filepath == "T:\\T:":
-				self.error( ob=image,
+				self.error( ob=image.name,
+					select_func='image',
 					type='IMAGE:PACKED',
 					message="Image {} packed. Please do not pack images."
 					.format( image.name )
@@ -40,42 +42,48 @@ class ImagePaths(BaseValidator):
 				unique_paths[path].append( image.name )
 
 			if not os.path.exists( path ):
-				self.error( ob=image,
+				self.error( ob=image.name,
+					select_func='image',
 					type='IMAGE:TEXTURE - MISSING',
 					message=( 'Image {}: file name {} does not exist on disk.' )
 					.format( image.name, path )
 				)
 
 			elif not path.startswith('t:'):
-				self.error( ob=image,
+				self.error( ob=image.name,
+					select_func='image',
 					type='IMAGE:FILE NOT ON T DRIVE',
 					message="Image {} is not on the T: drive (current path: {})."
 					.format( image.name, path )
 				)
 
 			elif 'r_and_d' in path:
-				self.error( ob=image,
+				self.error( ob=image.name,
+					select_func='image',
 					type='IMAGE:FILE IN R&D',
 					message="Image {} is in the R&D folder-- please move (current path: {})."
 					.format( image.name, path )
 				)
 
 			if 'desktop' in path:
-				self.error( ob=image,
+				self.error( ob=image.name,
+					select_func='image',
 					type='IMAGE:FILE ON DESKTOP',
 					message="Image {} is in a Desktop folder-- please move (current path: {})."
 					.format( image.name, path )
 				)
 
 			if not name.startswith('img.'):
-				self.error( ob=image,
+				self.error( ob=image.name,
+					select_func='image',
 					type='IMAGE:TEXTURE - PREFIX',
 					message=( 'Image {}: file name {} does not start with prefix "img.".' )
 					.format( image.name, path )
 				)
 
 			if not name.endswith('.png'):
-				self.error( ob=image,
+				self.error( ob=image.name,
+					select_func='image',
 					type='IMAGE:TEXTURE - FORMAT',
 					message=( 'Image {}: file {} is not a PNG file.' )
 					.format( image.name, path )
@@ -83,7 +91,8 @@ class ImagePaths(BaseValidator):
 
 			match = regex.match( name )
 			if not match:
-				self.error( ob=image,
+				self.error( ob=image.name,
+					select_func='image',
 					type='IMAGE:TEXTURE - NAME',
 					message=( 'Image {}: file name {} does not conform to show standard.' )
 					.format( image.name, path )
