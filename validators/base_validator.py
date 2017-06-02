@@ -258,11 +258,11 @@ def sf_modifiers(self):
 	mod.show_expanded = True
 
 	update_view()
-## ----------------------------------------------------------------------
-def sf_shape_keys(self):
-	scene = bpy.context.scene
 
-	print("Booyah")
+
+## ----------------------------------------------------------------------
+def sf_mesh_data(self):
+	scene = bpy.context.scene
 
 	try:
 		ob = scene.objects[self.ob]
@@ -281,19 +281,34 @@ def sf_shape_keys(self):
 	## select object first
 	sf_object( self )
 
-	## key_blocks isn't iterable??
-	keys = ob.data.shape_keys.key_blocks
-	for index in range(len(keys)):
-		if keys[index].name == self.subob:
-			ob.active_shape_key_index = index
-			break
-
 	properties = get_properties_spaces()
 	for space in properties:
 		try:
 			space.context = 'DATA'
 		except:
 			pass
+
+	update_view()
+
+
+## ----------------------------------------------------------------------
+def sf_shape_keys(self):
+	scene = bpy.context.scene
+
+	sf_mesh_data(self)
+
+	try:
+		ob = scene.objects[self.ob]
+	except:
+		print( '-- {}: Attempted to select non-existent object {}.'.format(self.parent, self.ob) )
+		return
+
+	## key_blocks isn't iterable??
+	keys = ob.data.shape_keys.key_blocks
+	for index in range(len(keys)):
+		if keys[index].name == self.subob:
+			ob.active_shape_key_index = index
+			break
 
 	update_view()
 
@@ -308,6 +323,7 @@ select_functions =  {
 	'faces'        : sf_faces,
 	'non_manifold' : sf_non_manifold,
 	'modifiers'    : sf_modifiers,
+	'mesh_data'    : sf_mesh_data,
 	'shape_keys'   : sf_shape_keys,
 }
 
