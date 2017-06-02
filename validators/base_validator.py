@@ -273,11 +273,6 @@ def sf_mesh_data(self):
 	if not ob.type == 'MESH':
 		raise ValueError( 'sf_modifiers: attempted to run on non-mesh object {}.'.format(self.ob) )
 
-	if not ob.data.shape_keys:
-		print( '-- {}: Attempted to select shape key "{}" on object with no shape keys {}.'
-				.format(self.parent, self.subob, self.ob) )
-		return
-
 	## select object first
 	sf_object( self )
 
@@ -289,18 +284,17 @@ def sf_mesh_data(self):
 			pass
 
 	update_view()
-
+	return ob
 
 ## ----------------------------------------------------------------------
 def sf_shape_keys(self):
 	scene = bpy.context.scene
 
-	sf_mesh_data(self)
+	ob = sf_mesh_data(self)
 
-	try:
-		ob = scene.objects[self.ob]
-	except:
-		print( '-- {}: Attempted to select non-existent object {}.'.format(self.parent, self.ob) )
+	if not ob.data.shape_keys:
+		print( '-- {}: Attempted to select shape key "{}" on object with no shape keys {}.'
+				.format(self.parent, self.subob, self.ob) )
 		return
 
 	## key_blocks isn't iterable??
@@ -314,17 +308,34 @@ def sf_shape_keys(self):
 
 
 ## ----------------------------------------------------------------------
+def sf_mesh_vertex_group(self):
+	scene = bpy.context.scene
+
+	ob = sf_mesh_data(self)
+
+	## not iterable in script
+	for index in range(len(ob.vertex_groups)):
+		if ob.vertex_groups[index].name == self.subob:
+			ob.vertex_groups.active_index = index
+			break
+
+	print( 'Selected "{}" on "{}" (index {})'.format(self.subob, self.ob, index) )
+	update_view()
+
+
+## ----------------------------------------------------------------------
 select_functions =  {
-	'null'         : sf_null,
-	'object'       : sf_object,
-	'image'        : sf_image,
-	'verts'        : sf_verts,
-	'edges'        : sf_edges,
-	'faces'        : sf_faces,
-	'non_manifold' : sf_non_manifold,
-	'modifiers'    : sf_modifiers,
-	'mesh_data'    : sf_mesh_data,
-	'shape_keys'   : sf_shape_keys,
+	'null'              : sf_null,
+	'object'            : sf_object,
+	'image'             : sf_image,
+	'verts'             : sf_verts,
+	'edges'             : sf_edges,
+	'faces'             : sf_faces,
+	'non_manifold'      : sf_non_manifold,
+	'modifiers'         : sf_modifiers,
+	'mesh_data'         : sf_mesh_data,
+	'shape_keys'        : sf_shape_keys,
+	'mesh_vertex_group' : sf_mesh_vertex_group,
 }
 
 ## ----------------------------------------------------------------------

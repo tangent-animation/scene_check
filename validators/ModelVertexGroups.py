@@ -30,6 +30,9 @@ class ModelVertexGroups(BaseValidator):
 
 				if not valid:
 					self.error(
+						ob=item.name,
+						subob=group.name,
+						select_func='mesh_vertex_group',
 						type='MODEL:VERTEX GROUP NAME',
 						message=('Mesh "{}" Vertex Group "{}": Name does not conform to show standards.')
 								.format( item.name, group.name )

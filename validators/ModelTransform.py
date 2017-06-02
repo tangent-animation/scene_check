@@ -28,7 +28,8 @@ class ModelTransform(BaseValidator):
 		for item in self.get_objects( type='MESH' ):
 			if not sum( item.location ) == 0.0:
 				self.error(
-					ob=item,
+					ob=item.name,
+					select_func='object',
 					type='MODEL:TRANSFORM LOCATION',
 					message=("Mesh {}: object location should be (0,0,0).")
 							.format( item.name )
@@ -36,7 +37,8 @@ class ModelTransform(BaseValidator):
 
 			if not sum( item.rotation_euler ) == 0.0:
 				self.error(
-					ob=item,
+					ob=item.name,
+					select_func='object',
 					type='MODEL:TRANSFORM ROTATION',
 					message=("Mesh {}: object rotation should be (0,0,0).")
 							.format( item.name )
@@ -44,7 +46,8 @@ class ModelTransform(BaseValidator):
 
 			if not sum( item.scale ) == 0.0:
 				self.error(
-					ob=item,
+					ob=item.name,
+					select_func='object',
 					type='MODEL:TRANSFORM SCALE',
 					message=("Mesh {}: object scale should be (1.0,1.0,1.0).")
 							.format( item.name )
@@ -52,7 +55,8 @@ class ModelTransform(BaseValidator):
 
 			if item.rotation_mode in rejected_orders:
 				self.error(
-					ob=item,
+					ob=item.name,
+					select_func='object',
 					type='MODEL:TRANSFORM ROTATION MODE',
 					message=("Mesh {}: object rotation_mode should not be {}.")
 							.format( item.name, item.rotation_mode )
