@@ -25,6 +25,9 @@ class ModelShapeKeys(BaseValidator):
 			for key in item.data.shape_keys.key_blocks:
 				if not key.name.startswith('shp') and not key.name == 'Basis':
 					self.error(
+						ob=item.name,
+						subob=key.name,
+						select_func='shape_keys',
 						type='MODEL:SHAPE KEY NAME',
 						message=("Mesh {} Shape {}: Name missing the 'shp' prefix.")
 								.format( item.name, key.name )

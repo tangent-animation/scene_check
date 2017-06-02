@@ -179,8 +179,9 @@ class KikiValidatorSelectError(bpy.types.Operator):
 			error = result['errors'][index]
 
 			## tricksy
-			# print( "Error: {} ({})".format( error.select_func, type(error.select_func)) )
+			print( "Error: {} ({})".format( error.select_func, type(error.select_func)) )
 			error.select_func(error)
+			print("after")
 		else:
 			report_type = { 'ERROR' }
 			self.report( report_type, 'No errors for selection.' )

@@ -28,29 +28,35 @@ class MeshModifiers(BaseValidator):
 		for item in self.get_objects( type='MESH' ):
 			for modifier in item.modifiers:
 				if modifier.show_render == False and modifier.show_viewport == False:
-					self.error(
-						ob=item,
+					self.warning(
+						ob=item.name,
+						select_func='modifiers',
 						subob=modifier.name,
 						type='MODEL:MODIFIER',
-						message=('Mesh "{}" Modifier "{}": disabled in VIEW and RENDER. Should it be removed?')
+						message=( ('Mesh "{}" Modifier "{}": disabled in VIEW and RENDER. Should it be removed?')
 								.format( item.name, modifier.name )
+						)
 					)
 				elif modifier.show_render == False:
-					self.error(
-						ob=item,
+					self.warning(
+						ob=item.name,
+						select_func='modifiers',
 						subob=modifier.name,
 						type='MODEL:MODIFIER',
-						message=('Mesh "{}" Modifier "{}": disabled in RENDER. Should it be removed?')
+						message=( ('Mesh "{}" Modifier "{}": disabled in RENDER. Should it be removed?')
 								.format( item.name, modifier.name )
+						)
 					)
 
 				elif modifier.show_viewport == False:
-					self.error(
-						ob=item,
+					self.warning(
+						ob=item.name,
+						select_func='modifiers',
 						subob=modifier.name,
 						type='MODEL:MODIFIER',
-						message=('Mesh "{}" Modifier "{}": disabled in VIEW. Should it be removed?')
+						message=( ('Mesh "{}" Modifier "{}": disabled in VIEW. Should it be removed?')
 								.format( item.name, modifier.name )
+						)
 					)
 
 				if modifier.type in target_deformer_types:
@@ -59,15 +65,19 @@ class MeshModifiers(BaseValidator):
 						for thisgroup in item.users_group:
 							if not( target.name in thisgroup.objects ):
 								self.error(
-									ob=target,
+									ob=target.name,
 									subob=modifier.name,
+									select_func='modifiers',
+									data=item.name,
 									type='GENERAL:DEFORMERS',
-									message=('Mesh "{}" Modifier "{}": Target {} not in rig group for linking.')
+									message=( ('Mesh "{}" Modifier "{}": Target {} not in rig group for linking.')
 											.format( item.name, modifier.name, target.name )
+									)
 								)
 					else:
 						self.error(
-							ob=item,
+							ob=item.name,
+							select_func='modifiers',
 							subob=modifier.name,
 							type='GENERAL:DEFORMERS',
 							message=('Mesh "{}" Modifier "{}": Target is empty.')
@@ -77,48 +87,58 @@ class MeshModifiers(BaseValidator):
 				elif modifier.type in target_subdiv_types:
 					if modifier.levels > modifier.render_levels:
 						self.error(
-							ob=item,
+							ob=item.name,
 							subob=modifier.name,
+							select_func='modifiers',
 							type='MODEL:SUBSURF',
-							message=('Mesh "{}" Modifier "{}": View subdiv levels higher in render than view.')
+							message=( ('Mesh "{}" Modifier "{}": View subdiv levels higher in render than view.')
 									.format( item.name, modifier.name )
+							)
 						)
 
 					if modifier.levels:
 						self.error(
-							ob=item,
+							ob=item.name,
 							subob=modifier.name,
+							select_func='modifiers',
 							type='MODEL:SUBSURF',
-							message=('Mesh "{}" Modifier "{}": subdiv levels should be zero at file save (currently {}).')
+							message=( ('Mesh "{}" Modifier "{}": subdiv levels should be zero at file save (currently {}).')
 									.format( item.name, modifier.name, modifier.levels )
+							)
 						)
 
 				elif modifier.type == 'WIREFRAME':
 						self.error(
-							ob=item,
+							ob=item.name,
 							subob=modifier.name,
+							select_func='modifiers',
 							type='MODEL:WIREFRAME',
-							message=('Mesh "{}" Modifier "{}": Wireframe modifier found; should probably be removed.')
+							message=( ('Mesh "{}" Modifier "{}": Wireframe modifier found; should probably be removed.')
 									.format( item.name, modifier.name )
+							)
 						)
 
 				elif modifier.type == 'MIRROR':
 						self.error(
-							ob=item,
+							ob=item.name,
 							subob=modifier.name,
+							select_func='modifiers',
 							type='MODEL:MIRROR',
-							message=('Mesh "{}" Modifier "{}": Mirror modifier found; should probably be applied.')
+							message=( ('Mesh "{}" Modifier "{}": Mirror modifier found; should probably be applied.')
 									.format( item.name, modifier.name )
+							)
 						)
 
 				elif modifier.type == 'BEVEL':
 					if len( [x for x in item.modifiers if x.type in target_subdiv_types] ):
 						self.error(
-							ob=item,
+							ob=item.name,
 							subob=modifier.name,
+							select_func='modifiers',
 							type='MODEL:BEVEL',
-							message=( 'Mesh "{}" Modifier "{}": Bevel modifier found; Check if Bevel '
+							message=( ('Mesh "{}" Modifier "{}": Bevel modifier found; Check if Bevel '
 									'edge weights are set to work correctly with Subdivision Surface '
 									'or Multires modifier.')
 									.format( item.name, modifier.name )
+							)
 						)

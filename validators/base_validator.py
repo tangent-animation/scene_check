@@ -24,7 +24,21 @@ def get_editors( type ):
 	return editors
 
 ## ----------------------------------------------------------------------
-def get_view3ds():
+def get_spaces( type ):
+	spaces = []
+	for area in bpy.context.screen.areas:
+		for space in area.spaces:
+			if space.type == type:
+				spaces.append( space )
+
+	return( spaces )
+
+## ----------------------------------------------------------------------
+def get_properties_spaces():
+	return get_spaces( 'PROPERTIES' )
+
+## ----------------------------------------------------------------------
+def get_view3d_editors():
 	return get_editors( 'VIEW_3D' )
 
 ## ----------------------------------------------------------------------
@@ -62,7 +76,7 @@ def sf_object(self):
 
 ## ----------------------------------------------------------------------
 def sf_image(self):
-	images = bpy.context.images
+	images = bpy.data.images
 
 	try:
 		image = images[self.ob]
@@ -71,8 +85,10 @@ def sf_image(self):
 		return
 
 	## SHOTGUN BLAST
-	for ed in get_image_editors:
-		ed.image = image
+	for ed in get_image_editors():
+		ed.spaces.active.image = image
+
+	print( "Selected image " + image.name )
 
 ## ----------------------------------------------------------------------
 def sf_non_manifold(self):
@@ -205,6 +221,84 @@ def sf_faces(self):
 
 
 ## ----------------------------------------------------------------------
+def sf_modifiers(self):
+	scene = bpy.context.scene
+
+	try:
+		ob = scene.objects[self.ob]
+	except:
+		print( '-- {}: Attempted to select non-existent object {}.'.format(self.parent, self.ob) )
+		return
+
+	if not ob.type == 'MESH':
+		raise ValueError( 'sf_modifiers: attempted to run on non-mesh object {}.'.format(self.ob) )
+
+	try:
+		mod = ob.modifiers[self.subob]
+	except:
+		print( '-- {}: Attempted to select non-existent modifier {} on object {}.'
+				.format(self.parent, self.subob, self.ob) )
+		return
+
+	## select object first
+	sf_object( self )
+
+	properties = get_properties_spaces()
+	for space in properties:
+		try:
+			space.context = 'MODIFIER'
+		except:
+			pass
+
+	## Thought here is there's no way to actually "select" a modifier
+	## so instead I'll minimize the others
+	for item in ob.modifiers:
+		item.show_expanded = False
+
+	mod.show_expanded = True
+
+	update_view()
+## ----------------------------------------------------------------------
+def sf_shape_keys(self):
+	scene = bpy.context.scene
+
+	print("Booyah")
+
+	try:
+		ob = scene.objects[self.ob]
+	except:
+		print( '-- {}: Attempted to select non-existent object {}.'.format(self.parent, self.ob) )
+		return
+
+	if not ob.type == 'MESH':
+		raise ValueError( 'sf_modifiers: attempted to run on non-mesh object {}.'.format(self.ob) )
+
+	if not ob.data.shape_keys:
+		print( '-- {}: Attempted to select shape key "{}" on object with no shape keys {}.'
+				.format(self.parent, self.subob, self.ob) )
+		return
+
+	## select object first
+	sf_object( self )
+
+	## key_blocks isn't iterable??
+	keys = ob.data.shape_keys.key_blocks
+	for index in range(len(keys)):
+		if keys[index].name == self.subob:
+			ob.active_shape_key_index = index
+			break
+
+	properties = get_properties_spaces()
+	for space in properties:
+		try:
+			space.context = 'DATA'
+		except:
+			pass
+
+	update_view()
+
+
+## ----------------------------------------------------------------------
 select_functions =  {
 	'null'         : sf_null,
 	'object'       : sf_object,
@@ -213,6 +307,8 @@ select_functions =  {
 	'edges'        : sf_edges,
 	'faces'        : sf_faces,
 	'non_manifold' : sf_non_manifold,
+	'modifiers'    : sf_modifiers,
+	'shape_keys'   : sf_shape_keys,
 }
 
 ## ----------------------------------------------------------------------
