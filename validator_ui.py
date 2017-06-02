@@ -167,6 +167,11 @@ class KikiValidatorSelectError(bpy.types.Operator):
 		scene = context.scene
 		result = gc_guard.get( 'result', {'errors':[], 'warnings':[] } )
 
+		try:
+			bpy.ops.object.mode_set( mode='OBJECT' )
+		except:
+			pass
+
 		error_count = len( result['errors'] )
 
 		if error_count:
@@ -179,6 +184,43 @@ class KikiValidatorSelectError(bpy.types.Operator):
 		else:
 			report_type = { 'ERROR' }
 			self.report( report_type, 'No errors for selection.' )
+
+		return {'FINISHED'}
+
+	def invoke(self, context, event):
+		return self.execute( context )
+
+
+## ======================================================================
+class KikiValidatorSelectWarning(bpy.types.Operator):
+	"""Tooltip"""
+	bl_idname = "kiki.validator_select_warning"
+	bl_label = "Validator: Select Warning"
+
+	@classmethod
+	def poll(cls, context):
+		return True
+
+	def execute(self, context):
+		scene = context.scene
+		result = gc_guard.get( 'result', {'errors':[], 'warnings':[] } )
+
+		try:
+			bpy.ops.object.mode_set( mode='OBJECT' )
+		except:
+			pass
+
+		error_count = len( result['warnings'] )
+
+		if error_count:
+			index = scene.validator_warnings_idx
+			warning = result['warnings'][index]
+
+			## tricksy
+			warning.select_func(warning)
+		else:
+			report_type = { 'ERROR' }
+			self.report( report_type, 'No warning for selection.' )
 
 		return {'FINISHED'}
 
@@ -219,8 +261,10 @@ class KikiValidatorPanel(bpy.types.Panel):
 			layout.label( 'Validator Warnings: {} Found'.format(len(scene.validator_warnings)) )
 			layout.template_list("MESH_UL_ValidatorWarnings", "", context.scene, "validator_warnings", 
 					context.scene, "validator_warnings_idx")
+			layout.operator( 'kiki.validator_select_warning' )
 
 
+## ======================================================================
 module_classes = [
 	MESH_UL_ValidatorErrors, 
 	MESH_UL_ValidatorWarnings, 
@@ -228,6 +272,7 @@ module_classes = [
 	KikiValidatorPanel, 
 	KikiValidatorRun,
 	KikiValidatorSelectError,
+	KikiValidatorSelectWarning,
 ]
 
 def register():
@@ -245,6 +290,7 @@ def register():
 	clear_scene_error_list()
 
 
+## ======================================================================
 def unregister():
 	for cls in module_classes:
 		bpy.utils.register_class( cls )
@@ -264,6 +310,7 @@ def unregister():
 			pass
 
 
+## ======================================================================
 if __name__ == "__main__":
 	unregister()
 	register()

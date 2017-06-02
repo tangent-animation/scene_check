@@ -17,7 +17,7 @@ class MeshNonManifold(BaseValidator):
 
 	def __init__(self):
 		super(MeshNonManifold, self).__init__()
-		print("--== MeshNonManifold is in Beta! ==--")
+		# print("--== MeshNonManifold is in Beta! ==--")
 
 	def process_hook( self ):
 		context = bpy.context

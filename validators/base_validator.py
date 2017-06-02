@@ -51,11 +51,13 @@ def sf_object(self):
 		item.select = False
 		item.hide = vis
 
-	ob.hide   = False
-	ob.select = True
+	ob.hide        = False
+	ob.hide_select = False
+	ob.select      = True
 
 	scene.objects.active = ob
 	scene.update()
+	update_view()
 
 
 ## ----------------------------------------------------------------------
@@ -124,7 +126,8 @@ def sf_verts(self):
 	ops.mesh.select_all( action='DESELECT' )
 
 	bm = bmesh.new()
-	bm.from_edit_mesh( ob.data )
+	bm.from_mesh( ob.data )
+	bm.vertices.ensure_lookup_table()
 
 	for index in self.data:
 		bm.vertices[index].select = True
@@ -154,7 +157,8 @@ def sf_edges(self):
 	ops.mesh.select_all( action='DESELECT' )
 
 	bm = bmesh.new()
-	bm.from_edit_mesh( ob.data )
+	bm.from_mesh( ob.data )
+	bm.edges.ensure_lookup_table()
 
 	for index in self.data:
 		bm.edges[index].select = True
@@ -179,15 +183,24 @@ def sf_faces(self):
 
 	ops.object.mode_set( mode='OBJECT' )
 	ops.object.mode_set( mode='EDIT' )
+
+	update_view()
+
 	ops.mesh.select_mode( use_extend=False, use_expand=False, type='FACE')
-	ops.mesh.select_all( action='DESELECT' )
 
 	bm = bmesh.new()
-	bm.from_edit_mesh( ob.data )
+	bm.from_mesh( ob.data )
+	bm.faces.ensure_lookup_table()
 
-	for index in self.data:
-		bm.faces[index].select = True
+	for index, face in enumerate(bm.faces):
+		if index in self.data:
+			face.select = True
+		else:
+			face.select = False
 
+	ops.object.mode_set( mode='OBJECT' )
+	bm.to_mesh( ob.data )
+	ops.object.mode_set( mode='EDIT' )
 	update_view()
 
 
