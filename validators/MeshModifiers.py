@@ -65,10 +65,10 @@ class MeshModifiers(BaseValidator):
 						for thisgroup in item.users_group:
 							if not( target.name in thisgroup.objects ):
 								self.error(
-									ob=target.name,
+									ob=item.name,
 									subob=modifier.name,
 									select_func='modifiers',
-									data=item.name,
+									data=target.name,
 									type='GENERAL:DEFORMERS',
 									message=( ('Mesh "{}" Modifier "{}": Target {} not in rig group for linking.')
 											.format( item.name, modifier.name, target.name )

@@ -161,6 +161,19 @@ class KikiValidatorSelectError(bpy.types.Operator):
 
 	@classmethod
 	def poll(cls, context):
+		result = gc_guard.get( 'result', {'errors':[], 'warnings':[] } )
+		index = context.scene.validator_errors_idx
+
+		if not len( result['errors'] ):
+			return False
+		try:
+			error = result['errors'][index]
+		except:
+			return False
+
+		if error.select_func.__name__ == 'sf_null':
+			return False
+
 		return True
 
 	def execute(self, context):
@@ -180,8 +193,14 @@ class KikiValidatorSelectError(bpy.types.Operator):
 
 			## tricksy
 			print( "Error: {} ({})".format( error.select_func, type(error.select_func)) )
-			error.select_func(error)
-			print("after")
+			
+			try:
+				error.select_func(error)
+			except Exception as e:
+				report_type = { 'ERROR' }
+				self.report( report_type, 'Unable to select (likely due to Driven visibility).' )
+				print( e.args )
+
 		else:
 			report_type = { 'ERROR' }
 			self.report( report_type, 'No errors for selection.' )
@@ -218,7 +237,12 @@ class KikiValidatorSelectWarning(bpy.types.Operator):
 			warning = result['warnings'][index]
 
 			## tricksy
-			warning.select_func(warning)
+			try:
+				warning.select_func(warning)
+			except Exception as e:
+				report_type = { 'ERROR' }
+				self.report( report_type, 'Unable to select (likely due to Driven visibility).' )
+				print( e.args )
 		else:
 			report_type = { 'ERROR' }
 			self.report( report_type, 'No warning for selection.' )
@@ -252,14 +276,14 @@ class KikiValidatorPanel(bpy.types.Panel):
 
 		if error_count:
 			layout.separator()
-			layout.label( 'Validator Errors: {} Found'.format(error_count) )
+			layout.label( 'Validator Errors: {} Found'.format(error_count), icon='ERROR' )
 			layout.template_list("MESH_UL_ValidatorErrors", "", context.scene, "validator_errors", 
 					context.scene, "validator_errors_idx")
 			layout.operator( 'kiki.validator_select_error' )
 
 		if warning_count:
 			layout.separator()
-			layout.label( 'Validator Warnings: {} Found'.format(len(scene.validator_warnings)) )
+			layout.label( 'Validator Warnings: {} Found'.format(len(scene.validator_warnings)), icon='QUESTION' )
 			layout.template_list("MESH_UL_ValidatorWarnings", "", context.scene, "validator_warnings", 
 					context.scene, "validator_warnings_idx")
 			layout.operator( 'kiki.validator_select_warning' )
@@ -282,10 +306,10 @@ def register():
 	for cls in module_classes:
 		bpy.utils.register_class( cls )
 
-	bpy.types.Scene.validator_errors           = bpy.props.CollectionProperty( type=ValidatorList )
+	bpy.types.Scene.validator_errors           = bpy.props.CollectionProperty( type=ValidatorList, options={'SKIP_SAVE'} )
 	bpy.types.Scene.validator_errors_idx       = bpy.props.IntProperty( default=0, min=0 )
 
-	bpy.types.Scene.validator_warnings         = bpy.props.CollectionProperty( type=ValidatorList )
+	bpy.types.Scene.validator_warnings         = bpy.props.CollectionProperty( type=ValidatorList, options={'SKIP_SAVE'} )
 	bpy.types.Scene.validator_warnings_idx     = bpy.props.IntProperty( default=0, min=0 )
 
 	clear_scene_error_list()

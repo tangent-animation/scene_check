@@ -30,7 +30,8 @@ class SurfacingMaterials(BaseValidator):
 							.format( item.name )
 				)
 
-			for material in item.data.materials:
+			## bugfix: some materials return as None?
+			for material in [ x for x in item.data.materials if x ]:
 				if not material.name in mesh_materials:
 					mesh_materials[material.name] = material
 

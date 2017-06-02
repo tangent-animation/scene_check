@@ -197,10 +197,11 @@ def sf_faces(self):
 	## select object first
 	sf_object( self )
 
+	## bugfix: make sure the damned thing is visible
+	ob.hide = False
+
 	ops.object.mode_set( mode='OBJECT' )
 	ops.object.mode_set( mode='EDIT' )
-
-	update_view()
 
 	ops.mesh.select_mode( use_extend=False, use_expand=False, type='FACE')
 
@@ -216,6 +217,8 @@ def sf_faces(self):
 
 	ops.object.mode_set( mode='OBJECT' )
 	bm.to_mesh( ob.data )
+	## bugfix: make sure the damned thing is visible
+	ob.hide = False
 	ops.object.mode_set( mode='EDIT' )
 	update_view()
 
@@ -243,6 +246,10 @@ def sf_modifiers(self):
 	## select object first
 	sf_object( self )
 
+	if self.data:
+		if self.data in scene.objects:
+			scene.objects[self.data].select = True
+
 	properties = get_properties_spaces()
 	for space in properties:
 		try:
@@ -261,7 +268,7 @@ def sf_modifiers(self):
 
 
 ## ----------------------------------------------------------------------
-def sf_mesh_data(self):
+def sf_data(self):
 	scene = bpy.context.scene
 
 	try:
@@ -269,9 +276,6 @@ def sf_mesh_data(self):
 	except:
 		print( '-- {}: Attempted to select non-existent object {}.'.format(self.parent, self.ob) )
 		return
-
-	if not ob.type == 'MESH':
-		raise ValueError( 'sf_modifiers: attempted to run on non-mesh object {}.'.format(self.ob) )
 
 	## select object first
 	sf_object( self )
@@ -284,6 +288,23 @@ def sf_mesh_data(self):
 			pass
 
 	update_view()
+	return ob
+
+## ----------------------------------------------------------------------
+def sf_mesh_data(self):
+	ob = sf_data(self)
+	if not ob.type == 'MESH':
+		raise ValueError( 'sf_mesh_data: attempted to run on non-mesh object {}.'.format(self.ob) )
+
+	return ob
+
+
+## ----------------------------------------------------------------------
+def sf_curve_data(self):
+	ob = sf_data(self)
+	if not ob.type == 'CURVE':
+		raise ValueError( 'sf_curve_data: attempted to run on non-curve object {}.'.format(self.ob) )
+
 	return ob
 
 ## ----------------------------------------------------------------------
@@ -333,7 +354,9 @@ select_functions =  {
 	'faces'             : sf_faces,
 	'non_manifold'      : sf_non_manifold,
 	'modifiers'         : sf_modifiers,
+	'data'         		: sf_data,
 	'mesh_data'         : sf_mesh_data,
+	'curve_data'        : sf_curve_data,
 	'shape_keys'        : sf_shape_keys,
 	'mesh_vertex_group' : sf_mesh_vertex_group,
 }

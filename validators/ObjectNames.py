@@ -26,24 +26,27 @@ class ObjectNames(BaseValidator):
 			##!FIXME: Regex works online but not here; punting
 			if ' ' in item.name or '\t' in item.name or '\r' in item.name:
 				self.error(
-					ob=item,
+					ob=item.name,
+					select_func='object',
 					type="GENERAL:OBJECT NAME",
 					message=( 'Object "{}" has whitespace in its name.' )
 						.format( item.name )
 				)
 
 			if item.type == 'CURVE':
-				if not theobj.name.startswith( 'crv' ):
+				if not item.name.startswith( 'crv' ):
 					self.error(
-						ob=item,
+						ob=item.name,
+						select_func='object',
 						type="GENERAL:OBJECT NAME",
 						message=( 'Object "{}" is missing the "crv" prefix.' )
 							.format( item.name )
 					)
 
-				if not theobj.data.name.startswith( 'crv' ):
+				if not item.data.name.startswith( 'crv' ):
 					self.error(
-						ob=item,
+						ob=item.name,
+						select_func='curve_data',
 						type="GENERAL:DATA NAME",
 						message=( 'Curve data for object "{}" is missing the "crv" prefix.' )
 							.format( item.data.name )
@@ -52,7 +55,8 @@ class ObjectNames(BaseValidator):
 			elif item.type == 'EMPTY':
 				if not item.name.startswith( 'nul' ):
 					self.error(
-						ob=item,
+						ob=item.name,
+						select_func='object',
 						type="GENERAL:OBJECT NAME",
 						message=( 'Empty object "{}" is missing the "nul" prefix.' )
 							.format( item.name )
@@ -61,7 +65,8 @@ class ObjectNames(BaseValidator):
 			elif item.type == 'LATTICE':
 				if not item.name.startswith( 'def' ):
 					self.error(
-						ob=item,
+						ob=item.name,
+						select_func='object',
 						type="GENERAL:OBJECT NAME",
 						message=( 'Lattice object "{}" is missing the "def" prefix.' )
 							.format( item.name )
