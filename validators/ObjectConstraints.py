@@ -12,7 +12,9 @@ bp = bpy.context.user_preferences
 
 class ObjectConstraints(BaseValidator):
 	'''
-	**
+	Makes sure that object-level constraints have
+	valid targets, and that those targets are a part
+	of the rig group.
 	'''
 
 	def __init__(self):

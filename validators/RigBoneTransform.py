@@ -3,6 +3,9 @@ import bpy
 from scene_check.validators.base_validator import BaseValidator
 
 class RigBoneTransform(BaseValidator):
+	'''
+	'''
+
 	automatic_fix = True
 
 	def __init__(self):

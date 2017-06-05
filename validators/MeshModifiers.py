@@ -12,6 +12,7 @@ class MeshModifiers(BaseValidator):
 	'''
 	Checks all modifiers on mesh objects:
 	* Are they enabled in view and render?
+	* To modifiers needing targets have a valid target?
 	* Are target objects in the rig group?
 	* Are subdiv render levels higher than display,
 	  and are display levels 1?

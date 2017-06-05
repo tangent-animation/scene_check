@@ -5,6 +5,10 @@ import bpy
 from scene_check.validators.base_validator import BaseValidator
 
 class RigArmatureNCR(BaseValidator):
+	'''
+	Check for visibility on non-control armatures (they should be hidden).
+	'''
+
 	automatic_fix = True
 
 	def __init__(self):

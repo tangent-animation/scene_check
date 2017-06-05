@@ -9,6 +9,11 @@ bc = bpy.context
 bp = bpy.context.user_preferences
 
 class AssetLibraries(BaseValidator):
+	'''
+	Validate asset libraries:
+	* Make sure no paths are absolute.
+	'''
+
 	def __init__(self):
 		super(AssetLibraries, self).__init__()
 

@@ -5,6 +5,17 @@ import bpy
 from scene_check.validators.base_validator import BaseValidator
 
 class ImagePaths(BaseValidator):
+	'''
+	Validates file paths in images:
+	* Make sure textures are not packed
+	* Make sure texture file path exists on disk
+	* Make sure path is on the T drive, and not in a wonky folder
+	* Make sure data block is named correctly.
+	* Make sure format is PNG
+	* Check all images against each other for multiple data blocks pointing
+	  to the same file on disk.
+	'''
+
 	def __init__(self):
 		super(ImagePaths, self).__init__()
 

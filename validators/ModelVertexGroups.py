@@ -11,7 +11,7 @@ bp = bpy.context.user_preferences
 
 class ModelVertexGroups(BaseValidator):
 	'''
-	Ensures vertex groups on mesh objects
+	Ensures vertex group names on mesh objects
 	conform to the show standard.
 	'''
 

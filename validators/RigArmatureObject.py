@@ -5,6 +5,11 @@ import bpy
 from scene_check.validators.base_validator import BaseValidator
 
 class RigArmatureObject(BaseValidator):
+	'''
+	Makes sure that the armature's rotation mode is 
+	properly set.
+	'''
+
 	def __init__(self):
 		super(RigArmatureObject, self).__init__()
 

@@ -11,6 +11,17 @@ bp = bpy.context.user_preferences
 file_regex = re.compile( "(chr|prp|set)([0-9]{3})(\_)([a-z0-9\_]+)(\.blend)" )
 
 class AssetFile(BaseValidator):
+	'''
+	Basic checks that work at the file level:
+	* "Auto execute scripts" should be enabled.
+	* "Use relative paths" should be disabled.
+	* "Use Autopack" should be disabled.
+	* render.use_simplify should be disabled.
+	* File name should conform to show style and be in the right place
+	* Checks for excess text data blocks
+	* Make sure the system units isn't imperial.
+	'''
+
 	def __init__(self):
 		super(AssetFile, self).__init__()
 

@@ -5,6 +5,12 @@ import bpy
 from scene_check.validators.base_validator import BaseValidator
 
 class RigBoneBendy(BaseValidator):
+	'''
+	Checks all non-deform bones for bendy values.
+	These slow down rigs, and should only be used 
+	if the rig requires bendy bone sampling.
+	'''
+
 	automatic_fix = True
 
 	def __init__(self):

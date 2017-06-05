@@ -14,8 +14,8 @@ class ObjectNames(BaseValidator):
 	'''
 	* Checks for whitespace in names
 	* Checks Curves and Curve data for 'crv' prefix.
-	* Checks Empty objects for 'nul' prefix
-	* Checks Lattice objects for 'def' prefix
+	* Checks Empty objects for 'nul' or 'cst' prefixes
+	* Checks Lattice objects for 'lat' prefix
 	'''
 
 	def __init__(self):

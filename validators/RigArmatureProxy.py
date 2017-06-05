@@ -5,6 +5,10 @@ import bpy
 from scene_check.validators.base_validator import BaseValidator
 
 class RigArmatureProxy(BaseValidator):
+	'''
+	Checks for extra proxy armatures in the current file.
+	'''
+
 	def __init__(self):
 		super(RigArmatureProxy, self).__init__()
 

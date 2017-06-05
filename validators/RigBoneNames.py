@@ -5,6 +5,11 @@ import bpy
 from scene_check.validators.base_validator import BaseValidator
 
 class RigBoneNames(BaseValidator):
+	'''
+	Checks all bones in all armatures to make sure they
+	conform to show standards.
+	'''
+
 	automatic_fix = True
 
 	def __init__(self):

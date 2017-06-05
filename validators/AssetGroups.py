@@ -9,6 +9,12 @@ bc = bpy.context
 bp = bpy.context.user_preferences
 
 class AssetGroups(BaseValidator):
+	'''
+	Checks to make sure that groups are valid:
+	* No light rig should be in the file
+	* No linked groups should be in the file.
+	'''
+
 	def __init__(self):
 		super(AssetGroups, self).__init__()
 

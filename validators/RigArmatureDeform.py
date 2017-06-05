@@ -5,6 +5,10 @@ import bpy
 from scene_check.validators.base_validator import BaseValidator
 
 class RigArmatureDeform(BaseValidator):
+	'''
+	Makes sure all deform bones are prefixed with "def."
+	'''
+
 	automatic_fix = True
 
 	def __init__(self):

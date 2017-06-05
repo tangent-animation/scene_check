@@ -5,6 +5,11 @@ import bpy
 from scene_check.validators.base_validator import BaseValidator
 
 class RigBoneLocking(BaseValidator):
+	'''
+	Checks for and automatically fixes bone locks on
+	non-control bones in all armatures.
+	'''
+
 	automatic_fix = True
 
 	def __init__(self):
