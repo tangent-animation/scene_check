@@ -26,21 +26,29 @@ class RigBoneBendy(BaseValidator):
 				if match:
 					if bone.bone.bbone_segments > 1:
 						if bone.name.startswith('ctl.'):
-							self.error( ob=arm, subob=bone.name,
+							self.error(
+								ob=arm.name,
+								subob=bone.name,
+								select_func='armature_bone',
 								type='control',
 								message="{}::{}: Control Bone has bendy segments."
 								.format(arm.name, bone.name)
 								)
 						else:
 							if not bone.name.startswith('def.'):
-								self.error( ob=arm, subob=bone.name,
+								self.error(
+									ob=arm.name,
+									subob=bone.name,
+									select_func='armature_bone',
 									message="{}::{}: Non-deform bone has bendy segments."
 									.format(arm.name, bone.name)
 									)
 
 	def automatic_fix_hook( self ):
+		'''
 		for error in self.errors:
 			if error.type == 'control':
 				error.ob.pose.bones[error.subob].bone.bbone_segments = 1
 				print( "+ Automatically fixed bendy for control bone {}::{}.".format(error.ob.name, error.subob) )
-
+		'''
+		pass

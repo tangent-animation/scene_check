@@ -26,15 +26,17 @@ class RigCharacterMeshLocks(BaseValidator):
 				for child in self.collect_children_recursive(arm, type='MESH'):
 					if not child.hide_select:
 						self.error(
-							ob=child,
+							ob=child.name,
+							select_func='object',
 							type='rig_mesh_hide',
-							message='Child object {} under rig {} is not properly locked.'
+							message='Child object {} under rig {} is not properly hidden.'
 							.format( child.name, arm.name )
 						)
 
 	def automatic_fix_hook( self ):
 		for error in self.errors:
 			if error.type == 'rig_mesh_hide':
-				error.ob.hide_select = True
-				print( "+ Automatically fixed mesh locking for rig mesh {}.".format(error.ob.name) )
+				ob = bpy.context.scene.objects[error.ob]
+				ob.hide_select = True
+				print( "+ Automatically fixed mesh locking for rig mesh {}.".format(ob.name) )
 

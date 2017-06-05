@@ -192,14 +192,13 @@ class KikiValidatorSelectError(bpy.types.Operator):
 			error = result['errors'][index]
 
 			## tricksy
-			print( "Error: {} ({})".format( error.select_func, type(error.select_func)) )
-			
+			# print( "Error: {} ({})".format( error.select_func, type(error.select_func)) )
 			try:
 				error.select_func(error)
 			except Exception as e:
 				report_type = { 'ERROR' }
 				self.report( report_type, 'Unable to select (likely due to Driven visibility).' )
-				print( e.args )
+				raise e
 
 		else:
 			report_type = { 'ERROR' }
@@ -242,7 +241,7 @@ class KikiValidatorSelectWarning(bpy.types.Operator):
 			except Exception as e:
 				report_type = { 'ERROR' }
 				self.report( report_type, 'Unable to select (likely due to Driven visibility).' )
-				print( e.args )
+				raise e
 		else:
 			report_type = { 'ERROR' }
 			self.report( report_type, 'No warning for selection.' )

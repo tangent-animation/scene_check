@@ -25,7 +25,7 @@ class ModelTransform(BaseValidator):
 				# 'YZX', 'ZXY', 'ZYX'
 			}
 
-		for item in self.get_objects( type='MESH' ):
+		for item in self.get_render_meshes():
 			if not sum( item.location ) == 0.0:
 				self.error(
 					ob=item.name,
@@ -44,7 +44,7 @@ class ModelTransform(BaseValidator):
 							.format( item.name )
 				)
 
-			if not sum( item.scale ) == 0.0:
+			if not sum( item.scale ) == 3.0:
 				self.error(
 					ob=item.name,
 					select_func='object',

@@ -7,6 +7,7 @@ from bpy import ops
 class BVException(Exception): pass
 class BVInvalidSubclass(BVException): pass
 class BVNotProcessed(BVException): pass
+class BVObjectNotFound(BVException): pass
 
 
 ## ----------------------------------------------------------------------
@@ -24,11 +25,11 @@ def get_editors( type ):
 	return editors
 
 ## ----------------------------------------------------------------------
-def get_spaces( type ):
+def get_spaces( type=None ):
 	spaces = []
 	for area in bpy.context.screen.areas:
 		for space in area.spaces:
-			if space.type == type:
+			if space.type == type or type is None:
 				spaces.append( space )
 
 	return( spaces )
@@ -55,9 +56,9 @@ def sf_object(self):
 
 	try:
 		ob = scene.objects[self.ob]
-	except:
+	except Exception as e:
 		print( '-- {}: Attempted to select non-existent object {}.'.format(self.parent, self.ob) )
-		return
+		raise e
 
 	for item in scene.objects:
 		vis = item.hide
@@ -71,6 +72,74 @@ def sf_object(self):
 
 	scene.objects.active = ob
 	scene.update()
+	update_view()
+
+	return ob
+
+
+## ----------------------------------------------------------------------
+def sf_action(self):
+	pass
+
+
+## ----------------------------------------------------------------------
+def sf_armature_bone(self):
+	ob = sf_object(self)
+
+	if not ob.type == 'ARMATURE':
+		raise ValueError( 'sf_armature_bone: attempted to run on non-armature object {}.'.format(self.ob) )
+
+	ops.object.mode_set( mode='OBJECT' )
+	ops.object.mode_set( mode='POSE' )
+	ops.pose.select_all( action='DESELECT' )
+
+	try:
+		bone = ob.pose.bones[self.subob]
+	except Exception as e:
+		print( '-- {}: Attempted to select non-existent object {}.'.format(self.parent, self.ob) )
+		raise e
+
+	bone.bone.select = True
+	bone.bone.select_head = True
+	bone.bone.select_tail = True
+
+	ob.data.bones.active = bone.bone
+
+	## sometimes the bone won't be visible because of bone layers
+	## so flip the layer on
+	layers = list(ob.data.layers)
+	for index in range(len(layers)):
+		layers[index] = layers[index] or bone.bone.layers[index]
+
+	ob.data.layers = layers
+
+	update_view()
+
+	return ob, bone
+
+## ----------------------------------------------------------------------
+def sf_armature_constraint(self):
+	ob, bone = sf_armature_bone(self)
+
+	try:
+		cnst = bone.constraints[self.data]
+	except Exception as e:
+		print( '-- {}: Attempted to select non-existent constraint {} on bone {}, armature {}.'
+				.format(self.parent, self.data, bone.name, ob.name) )
+		raise e
+
+	properties = get_properties_spaces()
+	for space in properties:
+		try:
+			space.context = 'BONE_CONSTRAINT'
+		except:
+			pass
+
+	for constraint in bone.constraints:
+		constraint.show_expanded = False
+
+	cnst.show_expanded = True
+
 	update_view()
 
 
@@ -268,6 +337,63 @@ def sf_modifiers(self):
 
 
 ## ----------------------------------------------------------------------
+def sf_materials(self):
+	scene = bpy.context.scene
+
+	## select object first
+	ob = sf_object( self )
+
+	if not ob.type == 'MESH':
+		raise ValueError( 'sf_modifiers: attempted to run on non-mesh object {}.'.format(self.ob) )
+
+	try:
+		mat = ob.data.materials[self.subob]
+	except Exception as e:
+		print( '-- {}: Attempted to select non-existent material {} on object {}.'
+				.format(self.parent, self.subob, self.ob) )
+		raise e
+
+	ob.active_material = mat
+
+	properties = get_properties_spaces()
+	for space in properties:
+		try:
+			space.context = 'MATERIAL'
+		except:
+			pass
+
+	update_view()
+	return(ob, mat)
+
+
+## ----------------------------------------------------------------------
+def sf_material_nodes(self):
+
+	ob, mat = sf_materials( self )
+	node_trees = get_spaces( type='NODE_TREE' )
+	for space in node_trees:
+		try:
+			space.context = 'MATERIAL'
+		except:
+			pass
+
+	nodes = mat.node_tree.nodes
+	try:
+		node = nodes[self.data]
+	except Exception as e:
+		print( '-- {}: Attempted to select non-existent node {} (object {}, material {}).'
+				.format(self.parent, self.data, self.ob, self.subob) )
+		raise e
+
+	for item in nodes:
+		item.select = False
+
+	node.select = True
+	print( "Selected {}".format(node.name) )
+	update_view()
+
+
+## ----------------------------------------------------------------------
 def sf_data(self):
 	scene = bpy.context.scene
 
@@ -297,6 +423,28 @@ def sf_mesh_data(self):
 		raise ValueError( 'sf_mesh_data: attempted to run on non-mesh object {}.'.format(self.ob) )
 
 	return ob
+
+
+## ----------------------------------------------------------------------
+def sf_mesh_uvs(self):
+	ob = sf_mesh_data(self )
+
+	uv_textures = ob.data.uv_textures if len(ob.data.uv_textures) else []
+	if not self.subob in uv_textures:
+		raise ValueError( ('sf_mesh_uvs: attempted to select non-existent '
+						   'UV layer "{}" on mesh object {}.')
+						   .format(self.subob, self.ob)
+						)
+
+	for index in range(len(uv_textures)):
+		layer = uv_textures[index]
+		print('layer "{}" >> subob "{}"'.format(layer.name, self.subob))
+		if layer.name == self.subob:
+			uv_textures.active_index = index
+			uv_textures.active = layer
+			break
+
+	update_view()
 
 
 ## ----------------------------------------------------------------------
@@ -346,19 +494,24 @@ def sf_mesh_vertex_group(self):
 
 ## ----------------------------------------------------------------------
 select_functions =  {
-	'null'              : sf_null,
-	'object'            : sf_object,
-	'image'             : sf_image,
-	'verts'             : sf_verts,
-	'edges'             : sf_edges,
-	'faces'             : sf_faces,
-	'non_manifold'      : sf_non_manifold,
-	'modifiers'         : sf_modifiers,
-	'data'         		: sf_data,
-	'mesh_data'         : sf_mesh_data,
-	'curve_data'        : sf_curve_data,
-	'shape_keys'        : sf_shape_keys,
-	'mesh_vertex_group' : sf_mesh_vertex_group,
+	'null'                : sf_null,
+	'object'              : sf_object,
+	'image'               : sf_image,
+	'verts'               : sf_verts,
+	'edges'               : sf_edges,
+	'faces'               : sf_faces,
+	'non_manifold'        : sf_non_manifold,
+	'modifiers'           : sf_modifiers,
+	'data'         		  : sf_data,
+	'mesh_data'           : sf_mesh_data,
+	'curve_data'          : sf_curve_data,
+	'shape_keys'          : sf_shape_keys,
+	'mesh_vertex_group'   : sf_mesh_vertex_group,
+	'materials'           : sf_materials,
+	'material_nodes'      : sf_material_nodes,
+	'mesh_uvs'            : sf_mesh_uvs,
+	'armature_bone'       : sf_armature_bone,
+	'armature_constraint' : sf_armature_constraint,
 }
 
 ## ----------------------------------------------------------------------
@@ -478,6 +631,14 @@ class BaseValidator( object ):
 				return [ x for x in self.scene.objects if x.type == type ]
 			return [ x for x in self.scene.objects ]
 		return []
+
+	def get_render_meshes( self ):
+		return [ 
+			x for x in self.get_objects(type='MESH')
+				if not x.name.startswith('shape')
+				and not x.name.count('_proxy')
+				and not x.name.count('mesh_deform')
+		]
 
 	def is_valid( self ):
 		if not self.processed:

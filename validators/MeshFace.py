@@ -20,10 +20,7 @@ class MeshFace(BaseValidator):
 		super(MeshFace, self).__init__()
 
 	def process_hook( self ):
-		for item in [ x for x in self.get_objects( type='MESH' ) 
-					 if not x.name.startswith('shape')
-					 and not x.name.count('_proxy')
-					 and not x.name.count('mesh_deform')]:
+		for item in self.get_render_meshes():
 			triangles   = 0
 			ngons       = 0
 			zero_area   = 0

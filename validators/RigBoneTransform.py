@@ -29,19 +29,24 @@ class RigBoneTransform(BaseValidator):
 				if special in arm.pose.bones:
 					bone = arm.pose.bones[special]
 
-
 			for bone in arm.pose.bones:
 				if bone.name in self.specials:
 					continue
 
 				if bone.rotation_mode in self.rejected_orders:
-					self.error( ob=arm, subob=bone.name,
+					self.error(
+						ob=arm.name,
+						subob=bone.name,
+						select_func='armature_bone',
 						message='{}::{}: Bone has invalid rotation order.'
 							.format(arm.name, bone.name) )
 
 				if 'god' in bone.name and not bone.parent:
 					if sum(bone.head):
-						self.error( ob=arm, subob=bone.name,
+						self.error(
+							ob=arm.name,
+							subob=bone.name,
+							select_func='armature_bone',
 							message=('{}::{}: TOP node in armature hierarchy '
 									'should be centered at origin (0,0,0).')
 								.format(arm.name, bone.name) )

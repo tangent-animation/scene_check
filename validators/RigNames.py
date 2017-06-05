@@ -28,12 +28,22 @@ class RigNames(BaseValidator):
 			ncr_match = ncr_regex.match( ob.name )
 
 			if not match and not ncr_match:
-				self.error( message="Armature object {} does not follow naming convention.'"
-							.format(ob.name) )
+				self.error(
+					ob=ob.name,
+					select_func='object',
+					type='ARMATURE:NAME',
+					message="Armature object {} does not follow naming convention.'"
+							.format(ob.name)
+				)
 
 			if not ob.data.name == ob.name:
-				self.error( message="Armature object {}'s data name does not match {}.'"
-							.format(ob.name, ob.data.name) )
+				self.error(
+					ob=ob.name,
+					type='ARMATURE:DATA NAME',
+					select_func='object',
+					message="Armature object {}'s data name does not match {}.'"
+							.format(ob.name, ob.data.name)
+				)
 
 
 

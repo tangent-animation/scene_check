@@ -21,10 +21,11 @@ class SurfacingMaterials(BaseValidator):
 	def process_hook( self ):
 		mesh_materials = {}
 
-		for item in self.get_objects(type='MESH'):
+		for item in self.get_render_meshes():
 			if not len(item.data.materials):
 				self.error(
-					ob=item,
+					ob=item.name,
+					select_func='object',
 					type='SURFACE:MATERIAL - NONE',
 					message=('Mesh "{}" has no materials.')
 							.format( item.name )
@@ -37,7 +38,8 @@ class SurfacingMaterials(BaseValidator):
 
 					if not material.name.startswith('mtl.'):
 						self.error(
-							ob=item,
+							ob=item.name,
+							select_func='materials',
 							subob=material.name,
 							type='SURFACE:MATERIAL - NAME',
 							message=('Material "{}" on Mesh "{}" "mtl." prefix in its name.')
@@ -51,8 +53,9 @@ class SurfacingMaterials(BaseValidator):
 				##!FIXME: This seems strange and arbitrary
 				if node_count > 15:
 					self.warning(
-						ob=item,
+						ob=item.name,
 						subob=material.name,
+						select_func='materials',
 						type='SURFACE:MATERIAL - COMPLEX',
 						message=('Material "{}" on Mesh "{}" has {} nodes-- possibly needs cleaning.')
 								.format( material.name, item.name, node_count )
@@ -68,47 +71,53 @@ class SurfacingMaterials(BaseValidator):
 					if node.type == 'TEX_IMAGE':
 						if not node.inputs[0].is_linked:
 							self.warning(
-								ob=item,
+								ob=item.name,
 								subob=material.name,
+								data=node.name,
+								select_func='material_nodes',
 								type='SURFACE:NODE - CONNECTION',
 								message=('Material "{}" on Mesh "{}" appears to have a disconnected UV input.')
 										.format( material.name, item.name )
 							)
 						else:
 							for link in node.inputs[0].links:
-								subob = '{}.node_tree.nodes[{}]'.format(material.name, node.name)
-								
 								## bugfix: uvmap_node.uv_map returns an empty string if nothing is picked
 								##         also, you can assume link.from_node is filled or it won't
 								##         be in the above tuple
-								if link.from_node.type == 'UVMAP' and len(link.from_node.uv_map):
+								if link.from_node.type == 'UVMAP' and not len(link.from_node.uv_map):
 									self.error(
-										ob=item,
-										subob=subob,
+										ob=item.name,
+										subob=material.name,
+										data=node.name,
+										select_func='material_nodes',
 										type='SURFACE:NODE - NO UVS',
-										message=('UV Map Node "{}" on Mesh "{}" has no UVs assigned.')
-												.format( subob, item.name )
+										message=('UVMap Node "{}" on Mesh "{}" has no UVs assigned.')
+												.format( material.name, item.name )
 									)
 
 								elif link.from_node.type == 'TEX_COORD':
 									if not link.from_node.object:
 										self.error(
-											ob=item,
-											subob=subob,
+											ob=item.name,
+											subob=material.name,
+											data=node.name,
+											select_func='material_nodes',
 											type='SURFACE:NODE - NO UVS',
 											message=('Texture Coordinates Node "{}" on '
 													 'Mesh "{}" has no source object.')
-													.format( subob, item.name )
+													.format( material.name, item.name )
 										)
 									elif not len(link.from_node.object.data.uv_layers):
 										self.error(
-											ob=item,
-											subob=subob,
-											type='SURFACE:NODE - NO UVS',
+											ob=item.name,
+											subob=material.name,
+											data=node.name,
+											select_func='material_nodes',
+											type='SURFACE:NODE - NO UV LAYERS',
 											message=('Texture Coordinates Node "{}" on '
 													 'Mesh "{}" has a source object '
-													 'with no UVs ("{}")')
-													.format( subob, item.name, link.from_node.object.name )
+													 'with no UV layers ("{}")')
+													.format( material.name, item.name, link.from_node.object.name )
 										)
 
 					elif node.type == 'GROUP':
@@ -135,7 +144,7 @@ class SurfacingMaterials(BaseValidator):
 
 				if cloth > 1:
 					self.error(
-						ob=item,
+						ob=item.name,
 						subob=material.name,
 						type='SURFACE:NODE - PBR',
 						message=('Material "{}" on Mesh "{}" has too many pbr_cloth groups (found {}).')
@@ -144,7 +153,7 @@ class SurfacingMaterials(BaseValidator):
 
 				if dielectric > 1:
 					self.error(
-						ob=item,
+						ob=item.name,
 						subob=material.name,
 						type='SURFACE:NODE - PBR',
 						message=('Material "{}" on Mesh "{}" has too many pbr_dielectric groups (found {}).')
@@ -153,7 +162,7 @@ class SurfacingMaterials(BaseValidator):
 
 				if glass > 1:
 					self.error(
-						ob=item,
+						ob=item.name,
 						subob=material.name,
 						type='SURFACE:NODE - PBR',
 						message=('Material "{}" on Mesh "{}" has too many pbr_glass groups (found {}).')
@@ -162,7 +171,7 @@ class SurfacingMaterials(BaseValidator):
 
 				if metal > 1:
 					self.error(
-						ob=item,
+						ob=item.name,
 						subob=material.name,
 						type='SURFACE:NODE - PBR',
 						message=('Material "{}" on Mesh "{}" has too many pbr_metal groups (found {}).')
@@ -171,7 +180,7 @@ class SurfacingMaterials(BaseValidator):
 
 				if skin > 1:
 					self.error(
-						ob=item,
+						ob=item.name,
 						subob=material.name,
 						type='SURFACE:NODE - PBR',
 						message=('Material "{}" on Mesh "{}" has too many pbr_skin groups (found {}).')

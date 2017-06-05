@@ -53,21 +53,21 @@ class ObjectNames(BaseValidator):
 					)
 
 			elif item.type == 'EMPTY':
-				if not item.name.startswith( 'nul' ):
+				if not item.name.startswith('nul') and not item.name.startswith('cst'):
 					self.error(
 						ob=item.name,
 						select_func='object',
 						type="GENERAL:OBJECT NAME",
-						message=( 'Empty object "{}" is missing the "nul" prefix.' )
+						message=( 'Empty object "{}" is missing a "nul" or "cst" prefix.' )
 							.format( item.name )
 					)
 
 			elif item.type == 'LATTICE':
-				if not item.name.startswith( 'def' ):
+				if not item.name.startswith( 'lat' ):
 					self.error(
 						ob=item.name,
 						select_func='object',
 						type="GENERAL:OBJECT NAME",
-						message=( 'Lattice object "{}" is missing the "def" prefix.' )
+						message=( 'Lattice object "{}" is missing the "lat" prefix.' )
 							.format( item.name )
 					)

@@ -14,6 +14,10 @@ class RigControllerConstraintNames(BaseValidator):
 			for bone in [ x for x in arm.pose.bones if x.name.startswith('ctl.') ]:
 				for cnst in bone.constraints:
 					if not cnst.name.startswith('DO_NOT_TOUCH'):
-						self.error( ob=arm, subob=bone.name,
+						self.error(
+							ob=arm.name,
+							subob=bone.name,
+							data=cnst.name,
+							select_func='armature_constraint',
 							message='Constraint "{}" on bone {}::{} should start with "DO_NOT_TOUCH"'
 								.format(cnst.name, arm.name, bone.name) )
