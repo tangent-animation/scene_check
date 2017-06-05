@@ -514,6 +514,12 @@ select_functions =  {
 	'armature_constraint' : sf_armature_constraint,
 }
 
+def get_select_func( name ):
+	if not name in select_functions:
+		raise ValueError( 'select_func "{}" does not exist.'.format(name) )
+	return select_functions[name]
+
+
 ## ----------------------------------------------------------------------
 class ValidationMessage( object ):
 	'''
@@ -535,7 +541,7 @@ class ValidationMessage( object ):
 		self._type = type
 		self.data = data
 		self.is_error = error
-		self.select_func = sf_null
+		self.select_func = select_func
 
 	def __repr__(self):
 		msg = "<< {}".format( "Error " if self.is_error else "Warning " )
@@ -554,17 +560,6 @@ class ValidationMessage( object ):
 	def type( self ):
 		return '' if self._type is None else self._type
 
-	def set_select_func(self, func_name):
-		if func_name is None:
-			self.select_func = sf_null
-
-		elif not func_name in select_functions.keys():
-			raise ValueError( ('ValidationMessage.select_func: can only be set to '
-							  'functions, None, and strings. Found {}.  Valid strings: {}.')
-							  .format( func_name, ', '.join(select_functions.keys()))
-							)
-		else:
-			self.select_func = select_functions[func_name]
 
 ## ----------------------------------------------------------------------
 class BaseValidator( object ):
@@ -615,14 +610,12 @@ class BaseValidator( object ):
 
 	def error(self, ob=None, subob=None, message=None, type=None, data=None, select_func=None ):
 		error = ValidationMessage( ob, subob, message, parent=self.id(),
-								   type=type, data=data )
-		error.set_select_func( select_func )
+								   type=type, data=data, select_func=select_func )
 		self.errors.append( error )
 
 	def warning(self, ob=None, subob=None, message=None, type=None, data=None, select_func=None ):
 		warning = ValidationMessage( ob, subob, message, parent=self.id(), 
 									 type=type, data=data, error=False, select_func=select_func )
-		warning.set_select_func( select_func )
 		self.warnings.append( warning )
 
 	def get_objects( self, type=None ):
@@ -658,3 +651,4 @@ class BaseValidator( object ):
 
 	def automatic_fix_hook( self ):
 		print( "-- {}::automatic_fix_hook not properly overridden.".format(self.id()) )
+

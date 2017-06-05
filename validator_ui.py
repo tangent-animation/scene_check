@@ -7,6 +7,9 @@ import time
 
 import bpy
 
+path = 'C:/dev/blender/python'
+if not path in sys.path:
+	sys.path.insert( 0, path )
 
 ## ======================================================================
 ## need to keep this here to keep things we're relying on from
@@ -63,6 +66,7 @@ class MESH_UL_ValidatorErrors( bpy.types.UIList ):
 	draw_item    = _draw_item
 	filter_items = _filter_items
 
+
 class MESH_UL_ValidatorWarnings( bpy.types.UIList ):
 	'''
 	Custom UI List class that allows for filtering in the search.
@@ -103,10 +107,6 @@ class KikiValidatorRun(bpy.types.Operator):
 		return True
 
 	def execute(self, context):
-		path = 'C:/dev/blender/python'
-		if not path in sys.path:
-			sys.path.insert( 0, path )
-
 		from scene_check import validator_factory
 		reload(validator_factory)
 
@@ -171,12 +171,16 @@ class KikiValidatorSelectError(bpy.types.Operator):
 		except:
 			return False
 
-		if error.select_func.__name__ == 'sf_null':
+		if error.select_func == 'null':
 			return False
 
 		return True
 
 	def execute(self, context):
+		from scene_check.validators import base_validator as bv
+		reload(bv)
+		from scene_check.validators.base_validator import get_select_func		
+
 		scene = context.scene
 		result = gc_guard.get( 'result', {'errors':[], 'warnings':[] } )
 
@@ -194,7 +198,8 @@ class KikiValidatorSelectError(bpy.types.Operator):
 			## tricksy
 			# print( "Error: {} ({})".format( error.select_func, type(error.select_func)) )
 			try:
-				error.select_func(error)
+				func = get_select_func( error.select_func )
+				func( error )
 			except Exception as e:
 				report_type = { 'ERROR' }
 				self.report( report_type, 'Unable to select (likely due to Driven visibility).' )
@@ -218,9 +223,26 @@ class KikiValidatorSelectWarning(bpy.types.Operator):
 
 	@classmethod
 	def poll(cls, context):
+		result = gc_guard.get( 'result', {'errors':[], 'warnings':[] } )
+		index = context.scene.validator_errors_idx
+
+		if not len( result['warnings'] ):
+			return False
+		try:
+			warning = result['warnings'][index]
+		except:
+			return False
+
+		if warning.select_func == 'null':
+			return False
+
 		return True
 
 	def execute(self, context):
+		from scene_check.validators import base_validator as bv
+		reload(bv)
+		from scene_check.validators.base_validator import get_select_func		
+
 		scene = context.scene
 		result = gc_guard.get( 'result', {'errors':[], 'warnings':[] } )
 
@@ -237,7 +259,8 @@ class KikiValidatorSelectWarning(bpy.types.Operator):
 
 			## tricksy
 			try:
-				warning.select_func(warning)
+				func = get_select_func( warning.select_func )
+				func( warning )
 			except Exception as e:
 				report_type = { 'ERROR' }
 				self.report( report_type, 'Unable to select (likely due to Driven visibility).' )
