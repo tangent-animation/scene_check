@@ -532,12 +532,12 @@ class ValidationMessage( object ):
 	Should not be instantiated outside of 
 	'''
 
-	def __init__( self, ob, subob, message, parent=None, 
+	def __init__( self, ob=None, subob=None, message=None, parent=None, 
 					type=None, data=None, error=True, select_func=None ):
 		self.ob = ob
 		self.subob = subob
 		self.message = message
-		self.parent = parent if parent else Error
+		self.parent = parent
 		self._type = type
 		self.data = data
 		self.is_error = error
@@ -559,6 +559,36 @@ class ValidationMessage( object ):
 	@property
 	def type( self ):
 		return '' if self._type is None else self._type
+
+	def to_dict( self ):
+		##TODO: error checking on None
+		result = {
+			'ob'          : self.ob,
+			'subob'       : self.subob,
+			'message'     : self.message,
+			'parent'      : self.parent,
+			'type'        : self.type,
+			'data'        : self.data,
+			'is_error'    : self.is_error,
+			'select_func' : self.select_func,
+		}
+
+		return result
+
+	def from_dict( self, value ):
+		##TODO: error checking on None
+		assert( isinstance(value, dict) )
+		self.ob          = value['ob']
+		self.subob       = value['subob']
+		self.message     = value['message']
+		self.parent      = value['parent']
+		self._type       = value['type']
+		self.data        = value['data']
+		self.is_error    = value['is_error']
+		self.select_func = value['select_func']
+
+		## trick for comprehensions
+		return self
 
 
 ## ----------------------------------------------------------------------

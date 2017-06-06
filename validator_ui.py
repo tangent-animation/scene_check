@@ -1,6 +1,7 @@
 ## ======================================================================
 
 from imp import reload
+import json
 import os
 import sys
 import time
@@ -10,6 +11,8 @@ import bpy
 path = 'C:/dev/blender/python'
 if not path in sys.path:
 	sys.path.insert( 0, path )
+
+from scene_check.validators.base_validator import update_view
 
 ## ======================================================================
 ## need to keep this here to keep things we're relying on from
@@ -94,6 +97,30 @@ def clear_scene_error_list():
 
 
 ## ======================================================================
+def populate_scene_error_list():
+	result = gc_guard['result']
+
+	scene = bpy.context.scene
+
+	clear_scene_error_list()
+
+	for index, item in enumerate( result['errors'] ):
+		error = scene.validator_errors.add()
+		error.label       = item.parent
+		error.type        = item.type
+		error.description = item.message
+		error.error_index = index
+
+	for index, item in enumerate( result['warnings'] ):
+		warning = scene.validator_warnings.add()
+		warning.label       = item.parent
+		warning.type        = item.type
+		warning.description = item.message
+		warning.error_index = index
+
+	update_view()
+
+## ======================================================================
 class KikiValidatorRun(bpy.types.Operator):
 	"""Tooltip"""
 	bl_idname = "kiki.validator_run"
@@ -129,28 +156,98 @@ class KikiValidatorRun(bpy.types.Operator):
 			)
 		)
 
-		scene = context.scene
-
-		clear_scene_error_list()
-
-		for index, item in enumerate( result['errors'] ):
-			error = scene.validator_errors.add()
-			error.label       = item.parent
-			error.type        = item.type
-			error.description = item.message
-			error.error_index = index
-
-		for index, item in enumerate( result['warnings'] ):
-			warning = scene.validator_warnings.add()
-			warning.label       = item.parent
-			warning.type        = item.type
-			warning.description = item.message
-			warning.error_index = index
-
+		populate_scene_error_list()
 		return {'FINISHED'}
 
 	def invoke(self, context, event):
 		return self.execute( context )
+
+
+## ======================================================================
+class KikiValidatorSave( bpy.types.Operator ):
+	"""Tooltip"""
+	bl_idname = "kiki.validator_save"
+	bl_label = "Validator: Save JSON"
+
+	filepath = bpy.props.StringProperty( subtype="FILE_PATH" )
+
+	@classmethod
+	def poll( cls, context ):
+		scene = bpy.context.scene
+		## intentionall returning the actual True / False objects
+		return True if len(scene.validator_errors) else False
+
+	def invoke( self, context, event ):
+		context.window_manager.fileselect_add( self )
+		return { 'RUNNING_MODAL' }
+
+	def execute( self, context ):
+		result = gc_guard['result']
+
+		error_count   = len( result['errors'] )
+		warning_count = len( result['warnings'] )
+
+		data = {
+			'warnings': [ x.to_dict() for x in result['warnings'] ],
+			'errors':   [ x.to_dict() for x in result['errors'] ],
+		}
+
+		with open( self.filepath, 'w' ) as fp:
+			try:
+				json.dump( data, fp, indent=4 )
+				self.report(
+					{ 'INFO' },
+					'Saved Error JSON to {}.'.format( self.filepath )
+				)
+			except:
+				self.report(
+					{ 'ERROR' },
+					'Unable to save to {}.'.format( self.filepath )
+				)
+
+		return { 'FINISHED' }
+
+
+## ======================================================================
+class KikiValidatorLoad(bpy.types.Operator):
+	"""Tooltip"""
+	bl_idname = "kiki.validator_load"
+	bl_label = "Validator: Load JSON"
+
+	filepath = bpy.props.StringProperty( subtype="FILE_PATH" )
+
+	@classmethod
+	def poll(cls, context):
+		return True
+
+	def invoke(self, context, event):
+		context.window_manager.fileselect_add( self )
+		return { 'RUNNING_MODAL' }
+
+	def execute(self, context):
+		from scene_check.validators import base_validator
+		reload( base_validator )
+		from scene_check.validators.base_validator import ValidationMessage
+
+		data = None
+		with open( self.filepath, 'r' ) as fp:
+			data = json.load( fp )
+
+		result = {
+			'warnings': [ ValidationMessage().from_dict(x) for x in data['warnings'] ],
+			'errors':   [ ValidationMessage().from_dict(x) for x in data['errors'] ],
+		}
+
+		gc_guard['result'] = result
+
+		populate_scene_error_list()
+
+		self.report(
+			{ 'INFO' },
+			'Loaded Errors JSON from {}.'.format( self.filepath )
+		)
+
+		return { 'FINISHED' }
 
 
 ## ======================================================================
@@ -293,22 +390,29 @@ class KikiValidatorPanel(bpy.types.Panel):
 
 		layout.operator( 'kiki.validator_run' )
 
+		split = layout.split( 0.5 )
+		split.operator( 'kiki.validator_load' )
+		split.operator( 'kiki.validator_save' )
+
 		if not (error_count + warning_count):
 			layout.label( "No errors or warnings found." )
 
 		if error_count:
-			layout.separator()
-			layout.label( 'Validator Errors: {} Found'.format(error_count), icon='ERROR' )
-			layout.template_list("MESH_UL_ValidatorErrors", "", context.scene, "validator_errors", 
+			col = layout.column()
+			col.alert = True
+			col.separator()
+			col.label( 'Validator Errors: {} Found'.format(error_count), icon='ERROR' )
+			col.template_list("MESH_UL_ValidatorErrors", "", context.scene, "validator_errors", 
 					context.scene, "validator_errors_idx")
-			layout.operator( 'kiki.validator_select_error' )
+			col.operator( 'kiki.validator_select_error' )
 
 		if warning_count:
-			layout.separator()
-			layout.label( 'Validator Warnings: {} Found'.format(len(scene.validator_warnings)), icon='QUESTION' )
-			layout.template_list("MESH_UL_ValidatorWarnings", "", context.scene, "validator_warnings", 
+			col = layout.column()
+			col.separator()
+			col.label( 'Validator Warnings: {} Found'.format(len(scene.validator_warnings)), icon='QUESTION' )
+			col.template_list("MESH_UL_ValidatorWarnings", "", context.scene, "validator_warnings", 
 					context.scene, "validator_warnings_idx")
-			layout.operator( 'kiki.validator_select_warning' )
+			col.operator( 'kiki.validator_select_warning' )
 
 
 ## ======================================================================
@@ -320,6 +424,8 @@ module_classes = [
 	KikiValidatorRun,
 	KikiValidatorSelectError,
 	KikiValidatorSelectWarning,
+	KikiValidatorLoad,
+	KikiValidatorSave,
 ]
 
 def register():
@@ -328,11 +434,11 @@ def register():
 	for cls in module_classes:
 		bpy.utils.register_class( cls )
 
-	bpy.types.Scene.validator_errors           = bpy.props.CollectionProperty( type=ValidatorList, options={'SKIP_SAVE'} )
-	bpy.types.Scene.validator_errors_idx       = bpy.props.IntProperty( default=0, min=0 )
+	bpy.types.Scene.validator_errors       = bpy.props.CollectionProperty( type=ValidatorList, options={'SKIP_SAVE'} )
+	bpy.types.Scene.validator_errors_idx   = bpy.props.IntProperty( default=0, min=0 )
 
-	bpy.types.Scene.validator_warnings         = bpy.props.CollectionProperty( type=ValidatorList, options={'SKIP_SAVE'} )
-	bpy.types.Scene.validator_warnings_idx     = bpy.props.IntProperty( default=0, min=0 )
+	bpy.types.Scene.validator_warnings     = bpy.props.CollectionProperty( type=ValidatorList, options={'SKIP_SAVE'} )
+	bpy.types.Scene.validator_warnings_idx = bpy.props.IntProperty( default=0, min=0 )
 
 	clear_scene_error_list()
 
