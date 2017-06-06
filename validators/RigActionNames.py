@@ -17,6 +17,6 @@ class RigActionNames(BaseValidator):
 		for action in bpy.data.actions:
 			if not action.name.startswith('DO_NOT_TOUCH'):
 				self.error( 
-					ob=action,
+					ob=action.name,
 					message='Action named "{}" should start with "DO_NOT_TOUCH"'.format(action.name)
 				)
