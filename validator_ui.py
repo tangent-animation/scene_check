@@ -445,7 +445,7 @@ class KikiValidatorPanel(bpy.types.Panel):
 			col.separator()
 			col.label( 'Validator Errors: {} Found'.format(error_count), icon='ERROR' )
 			col.template_list("MESH_UL_ValidatorErrors", "", context.scene, "validator_errors", 
-					context.scene, "validator_errors_idx")
+					context.scene, "validator_errors_idx", item_dyntip_propname="description")
 			col.operator( 'kiki.validator_select_error' )
 
 		if warning_count:
@@ -453,7 +453,7 @@ class KikiValidatorPanel(bpy.types.Panel):
 			col.separator()
 			col.label( 'Validator Warnings: {} Found'.format(len(scene.validator_warnings)), icon='QUESTION' )
 			col.template_list("MESH_UL_ValidatorWarnings", "", context.scene, "validator_warnings", 
-					context.scene, "validator_warnings_idx")
+					context.scene, "validator_warnings_idx", item_dyntip_propname="description")
 			col.operator( 'kiki.validator_select_warning' )
 
 
