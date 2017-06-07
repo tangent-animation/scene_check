@@ -8,7 +8,7 @@ import time
 
 import bpy
 
-path = 'C:/dev/blender/python'
+path = os.path.dirname( os.path.abspath(__file__) )
 if not path in sys.path:
 	sys.path.insert( 0, path )
 
@@ -22,6 +22,10 @@ gc_guard = { 'result': {'errors':[], 'warnings':[]} }
 
 ## ======================================================================
 def _draw_item(self, context, layout, data, item, icon, active_data, active_propname, index, flt_flag):
+	'''
+	Custom draw function for the custom UIList display classes.
+	'''
+
 	self.use_filter_show = True
 
 	if self.layout_type in {'DEFAULT', 'COMPACT'}:
@@ -35,8 +39,11 @@ def _draw_item(self, context, layout, data, item, icon, active_data, active_prop
 	elif self.layout_type in {'GRID'}:
 		pass
 
-# Called once to filter/reorder items.
 def _filter_items(self, context, data, propname):
+	'''
+	Called once to filter/reorder items.
+	'''
+
 	column = getattr(data, propname)
 	filter_name = self.filter_name.lower()
 
@@ -82,6 +89,10 @@ class MESH_UL_ValidatorWarnings( bpy.types.UIList ):
 
 ## ======================================================================
 class ValidatorList(bpy.types.PropertyGroup):
+	'''
+	In-scene storage for the Error and Warning UI fields.
+	'''
+
 	label = bpy.props.StringProperty()
 	type = bpy.props.StringProperty()
 	description = bpy.props.StringProperty()
@@ -90,6 +101,10 @@ class ValidatorList(bpy.types.PropertyGroup):
 
 ## ======================================================================
 def clear_scene_error_list():
+	'''
+	Clears the memory in-scene, wiping all Errors and Warnings.
+	'''
+
 	scene = bpy.context.scene	
 
 	for prop in scene.validator_errors, scene.validator_warnings:
@@ -98,6 +113,12 @@ def clear_scene_error_list():
 
 ## ======================================================================
 def populate_scene_error_list():
+	'''
+	Once the data is collected in gc_guard, this function
+	fills the in-scene Error and Warning memory spots for
+	the UI to display, and for searching.
+	'''
+
 	result = gc_guard['result']
 
 	scene = bpy.context.scene
@@ -122,7 +143,7 @@ def populate_scene_error_list():
 
 ## ======================================================================
 class KikiValidatorRun(bpy.types.Operator):
-	"""Tooltip"""
+	"""Runs all Validators."""
 	bl_idname = "kiki.validator_run"
 	bl_label = "Validator: Run"
 
@@ -165,7 +186,7 @@ class KikiValidatorRun(bpy.types.Operator):
 
 ## ======================================================================
 class KikiValidatorSave( bpy.types.Operator ):
-	"""Tooltip"""
+	"""Saves the generated error list to a file."""
 	bl_idname = "kiki.validator_save"
 	bl_label = "Validator: Save JSON"
 
@@ -210,7 +231,7 @@ class KikiValidatorSave( bpy.types.Operator ):
 
 ## ======================================================================
 class KikiValidatorLoad(bpy.types.Operator):
-	"""Tooltip"""
+	"""Loads a previously-saved error list from a file."""
 	bl_idname = "kiki.validator_load"
 	bl_label = "Validator: Load JSON"
 
@@ -252,7 +273,7 @@ class KikiValidatorLoad(bpy.types.Operator):
 
 ## ======================================================================
 class KikiValidatorSelectError(bpy.types.Operator):
-	"""Tooltip"""
+	"""Selects the objects related to the currently-selected Error."""
 	bl_idname = "kiki.validator_select_error"
 	bl_label = "Validator: Select Error"
 
@@ -314,7 +335,7 @@ class KikiValidatorSelectError(bpy.types.Operator):
 
 ## ======================================================================
 class KikiValidatorSelectWarning(bpy.types.Operator):
-	"""Tooltip"""
+	"""Selects the objects related to the currently-selected Warning."""
 	bl_idname = "kiki.validator_select_warning"
 	bl_label = "Validator: Select Warning"
 
@@ -373,6 +394,26 @@ class KikiValidatorSelectWarning(bpy.types.Operator):
 
 
 ## ======================================================================
+class KikiValidatorClearAll(bpy.types.Operator):
+	"""Clears the Errors and Warnings lists."""
+	bl_idname = "kiki.validator_clear_all"
+	bl_label = "Validator: Clear All"
+
+	@classmethod
+	def poll(cls, context):
+		return len(context.scene.validator_errors) or len(context.scene.validator_warnings)
+		return True
+
+	def execute(self, context):
+		gc_guard['result'] = { 'errors':[], 'warnings':[] }
+		clear_scene_error_list()
+		return {'FINISHED'}
+
+	def invoke(self, context, event):
+		return self.execute( context )
+
+
+## ======================================================================
 class KikiValidatorPanel(bpy.types.Panel):
 	"""Creates a Panel in the Object properties window"""
 	bl_space_type = 'VIEW_3D'
@@ -389,6 +430,7 @@ class KikiValidatorPanel(bpy.types.Panel):
 		warning_count = len(scene.validator_warnings)
 
 		layout.operator( 'kiki.validator_run' )
+		layout.operator( 'kiki.validator_clear_all' )
 
 		split = layout.split( 0.5 )
 		split.operator( 'kiki.validator_load' )
@@ -426,11 +468,10 @@ module_classes = [
 	KikiValidatorSelectWarning,
 	KikiValidatorLoad,
 	KikiValidatorSave,
+	KikiValidatorClearAll,
 ]
 
 def register():
-	scene = bpy.context.scene
-
 	for cls in module_classes:
 		bpy.utils.register_class( cls )
 
@@ -439,8 +480,6 @@ def register():
 
 	bpy.types.Scene.validator_warnings     = bpy.props.CollectionProperty( type=ValidatorList, options={'SKIP_SAVE'} )
 	bpy.types.Scene.validator_warnings_idx = bpy.props.IntProperty( default=0, min=0 )
-
-	clear_scene_error_list()
 
 
 ## ======================================================================
