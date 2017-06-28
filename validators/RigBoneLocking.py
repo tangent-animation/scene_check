@@ -34,9 +34,12 @@ class RigBoneLocking(BaseValidator):
 				if not match:
 					for attr in bone.lock_location, bone.lock_rotation, bone.lock_scale:
 						for index in range(3):
-							if not attr[index]:
-								attr[index] = True
-								modified = True
+							try:
+								if not attr[index]:
+									attr[index] = True
+									modified = True
+							except AttributeError:
+								continue
 				if modified:
 					changed += 1
 			if changed:

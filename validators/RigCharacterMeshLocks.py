@@ -36,7 +36,10 @@ class RigCharacterMeshLocks(BaseValidator):
 	def automatic_fix_hook( self ):
 		for error in self.errors:
 			if error.type == 'rig_mesh_hide':
-				ob = bpy.context.scene.objects[error.ob]
+				try:
+					ob = bpy.context.scene.objects[error.ob]
+				except KeyError:
+					continue
 				ob.hide_select = True
 				print( "+ Automatically fixed mesh locking for rig mesh {}.".format(ob.name) )
 
