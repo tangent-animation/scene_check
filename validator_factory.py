@@ -54,23 +54,33 @@ class ValidatorFactory(object):
 		raise ValidatorFactoryException('Class not found or unloadable: %s.' % name)
 
 	## ----------------------------------------------------------------------
-	def get_class_names( self, filter=None ):
-		if isinstance( filter, str ):
-			filter = filter.lower()
-			result = [ x for x in self.modules if filter in x.lower() ]
+	def get_class_names( self, task_filter=None ):
+		result = []
+		
+		modules_lower = [ x.lower() for x in self.modules ]
+
+		if isinstance( task_filter, str ):
+			task_filter = task_filter.lower()
+			result += [ x for x in modules_lower if task_filter in x ]
+		elif isinstance( task_filter, (list, tuple, dict, set)):
+			task_filter = [ str(x).lower() for x in task_filter ]
+			for item in task_filter:
+				result += [ x for x in modules_lower if item in x ]
+		elif task_filter is None:
+			result += self.modules[:]
 		else:
-			result = self.modules[:]
+			raise ValueError( "get_class_names: task_filter must be a string, a list of strings, or None." )
 		return result
 
 	## ----------------------------------------------------------------------
-	def run_all( self, *args, task_filter=None ):
+	def run_all( self, *args, task_filter=None, as_json=False ):
 		result = {
 			'errors':   [],
 			'warnings': [],
 			'valid':    []
 		}
 
-		classes = self.get_class_names( filter=task_filter )
+		classes = self.get_class_names( task_filter=task_filter )
 		if len(args):
 			classes = [ x for x in classes if x in args ]
 
@@ -82,6 +92,15 @@ class ValidatorFactory(object):
 		else:
 			result['valid'].append( name )
 
-		return result		
+		if as_json:
+			data = {
+				'warnings': [ x.to_dict() for x in result['warnings'] ],
+				'errors':   [ x.to_dict() for x in result['errors'] ],
+			}
+
+			return data
+
+		return result
+
 
 ## ----------------------------------------------------------------------
