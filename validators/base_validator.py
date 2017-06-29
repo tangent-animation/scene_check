@@ -1,4 +1,4 @@
-import os
+import os, re
 import bpy
 import bmesh
 from bpy import ops
@@ -596,6 +596,8 @@ class BaseValidator( object ):
 	enabled = True
 	automatic_fix = False
 	log_name = 'check_result_log.json'
+
+	rig_regex = re.compile( r"(con|rig|ncr)\.([A-Za-z0-9_]+)\.([0-9]{3})" )
 
 	def __init__( self ):
 		self.processed = False

@@ -17,17 +17,13 @@ class RigNames(BaseValidator):
 			self.error( message="Base rig object is missing ({})."
 							.format(base_rig_name) )
 
-		rig_regex = re.compile( r"(rig)\.([A-Za-z0-9_]+)\.([0-9]{3})" )
-		ncr_regex = re.compile( r"(ncr)\.([A-Za-z0-9_]+)\.([0-9]{3})" )
-
 		for ob in [ x for x in self.scene.objects if x.type == 'ARMATURE' ]:
 			if ob.name == base_rig_name:
 				continue
 
-			match = rig_regex.match( ob.name )
-			ncr_match = ncr_regex.match( ob.name )
+			match = self.rig_regex.match( ob.name )
 
-			if not match and not ncr_match:
+			if not match:
 				self.error(
 					ob=ob.name,
 					select_func='object',
