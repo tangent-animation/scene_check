@@ -595,7 +595,7 @@ class ValidationMessage( object ):
 class BaseValidator( object ):
 	enabled = True
 	automatic_fix = False
-	log_name = 'check_result_log.csv'
+	log_name = 'check_result_log.json'
 
 	def __init__( self ):
 		self.processed = False
@@ -634,6 +634,7 @@ class BaseValidator( object ):
 		self.process_hook()
 		self.processed = True
 
+	def auto_fix_errors( self ):
 		if self.automatic_fix:
 			self.automatic_fix_hook()
 			self.scene.update()

@@ -1,6 +1,7 @@
 import imp
 from imp import reload
 import os, sys
+from typing import List, Optional, Union
 
 from scene_check.validators import base_validator
 reload( base_validator )
@@ -42,9 +43,11 @@ class ValidatorFactory(object):
 
 	## ----------------------------------------------------------------------
 	def get_class( self, name ):
+		name = name.lower()
+
 		for item in self.modules:
 			modName = item.split('.')[0]
-			if modName == name:
+			if modName.lower() == name:
 				impmod = __import__('scene_check.validators.'+modName, {}, {}, [modName])
 				reload(impmod)
 				theClass = impmod.__getattribute__( modName )
@@ -54,7 +57,7 @@ class ValidatorFactory(object):
 		raise ValidatorFactoryException('Class not found or unloadable: %s.' % name)
 
 	## ----------------------------------------------------------------------
-	def get_class_names( self, task_filter=None ):
+	def get_class_names( self, task_filter:Optional[str]=None ):
 		result = []
 		
 		modules_lower = [ x.lower() for x in self.modules ]
