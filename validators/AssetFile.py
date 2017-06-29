@@ -8,7 +8,7 @@ bd = bpy.data
 bc = bpy.context
 bp = bpy.context.user_preferences
 
-file_regex = re.compile( "(chr|prp|set)([0-9]{3})(\_)([a-z0-9\_]+)(\.blend)" )
+file_regex = re.compile( "(chr|prp|set)([0-9]{3})(\_)([a-z0-9\_]+)(\.)?(v[0-9]+)?(\.blend)" )
 
 class AssetFile(BaseValidator):
 	'''

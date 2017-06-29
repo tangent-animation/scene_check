@@ -25,10 +25,21 @@ class ImagePaths(BaseValidator):
 		unique_paths = {}
 
 		for image in bpy.data.images:
+			if image.source == 'GENERATED':
+				self.error( ob=image.name,
+					select_func='image',
+					type='IMAGE:TEXTURE - GENERATED',
+					message=( 'Image {} is generated. '
+							  'Please remove and replace with a solid ' 
+							  'color in your shading networks.' )
+					.format( image.name )
+				)
+				continue
+
 			if image.is_dirty:
 				self.error( ob=image.name,
 					select_func='image',
-					type='IMAGE:TEXTURE - PACKED',
+					type='IMAGE:TEXTURE - DIRTY',
 					message=( 'Image {} is packed with unsaved changes. '
 							  'Please do not pack images into files.' )
 					.format( image.name )

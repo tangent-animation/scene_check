@@ -143,7 +143,7 @@ class SurfacingMaterials(BaseValidator):
 							skin += 1
 
 				if cloth > 1:
-					self.error(
+					self.warning(
 						ob=item.name,
 						subob=material.name,
 						type='SURFACE:NODE - PBR',
@@ -152,7 +152,7 @@ class SurfacingMaterials(BaseValidator):
 					)
 
 				if dielectric > 1:
-					self.error(
+					self.warning(
 						ob=item.name,
 						subob=material.name,
 						type='SURFACE:NODE - PBR',
@@ -161,7 +161,7 @@ class SurfacingMaterials(BaseValidator):
 					)
 
 				if glass > 1:
-					self.error(
+					self.warning(
 						ob=item.name,
 						subob=material.name,
 						type='SURFACE:NODE - PBR',
@@ -170,7 +170,7 @@ class SurfacingMaterials(BaseValidator):
 					)
 
 				if metal > 1:
-					self.error(
+					self.warning(
 						ob=item.name,
 						subob=material.name,
 						type='SURFACE:NODE - PBR',
@@ -179,7 +179,7 @@ class SurfacingMaterials(BaseValidator):
 					)
 
 				if skin > 1:
-					self.error(
+					self.warning(
 						ob=item.name,
 						subob=material.name,
 						type='SURFACE:NODE - PBR',
