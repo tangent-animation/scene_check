@@ -598,6 +598,7 @@ class BaseValidator( object ):
 	log_name = 'check_result_log.json'
 
 	rig_regex = re.compile( r"(con|rig|ncr)\.([A-Za-z0-9_]+)\.([0-9]{3})" )
+	proxy_regex = re.compile( r"(grp)\.([A-Za-z0-9_]+)\.([0-9]{3})_proxy" )
 
 	def __init__( self ):
 		self.processed = False

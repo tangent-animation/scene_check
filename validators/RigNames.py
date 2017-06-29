@@ -32,6 +32,15 @@ class RigNames(BaseValidator):
 							.format(ob.name)
 				)
 
+			elif match and '_low.' in ob.name and ob.proxy_group:
+				self.error(
+					ob=ob.name,
+					select_func='object',
+					type='ARMATURE:NAME',
+					message='Proxy armature "{}" has "_low" in the name.'
+							.format(ob.name)
+				)
+
 			if not ob.data.name == ob.name:
 				self.error(
 					ob=ob.name,
