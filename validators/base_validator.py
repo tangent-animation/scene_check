@@ -286,10 +286,21 @@ def sf_faces(self):
 
 	ops.object.mode_set( mode='OBJECT' )
 	bm.to_mesh( ob.data )
+	
 	## bugfix: make sure the damned thing is visible
-	ob.hide = False
-	ops.object.mode_set( mode='EDIT' )
+	scene.objects.active = ob
 	update_view()
+
+	ob.hide        = False
+	ob.hide_select = False
+
+	print('+ Selected {} face{} on object "{}".'
+			.format( len(self.data), '' if len(self.data) == 1 else 's', ob.name )
+		)
+	try:
+		ops.object.mode_set( mode='EDIT' )
+	except:
+		print("-- Unable to set edit mode (probably due to driven visibility or selection)")
 
 
 ## ----------------------------------------------------------------------
