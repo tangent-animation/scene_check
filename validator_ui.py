@@ -72,6 +72,8 @@ def _filter_items(self, context, data, propname):
 class MESH_UL_ValidatorErrors( bpy.types.UIList ):
 	'''
 	Custom UI List class that allows for filtering in the search.
+	Need multiple because every separate one needs a separate subclass--
+	they all store information in RNA.
 	'''
 	draw_item    = _draw_item
 	filter_items = _filter_items
@@ -80,11 +82,146 @@ class MESH_UL_ValidatorErrors( bpy.types.UIList ):
 class MESH_UL_ValidatorWarnings( bpy.types.UIList ):
 	'''
 	Custom UI List class that allows for filtering in the search.
-	Need two because every separate one needs a separate subclass--
-	they all store information in RNA.
 	'''
 	draw_item    = _draw_item
 	filter_items = _filter_items
+
+
+class MESH_UL_ValidatorAutoFixes( bpy.types.UIList ):
+	'''
+	Custom UI List class that allows for filtering in the search.
+	'''
+	draw_item    = _draw_item
+	filter_items = _filter_items
+
+	def draw_item(self, context, layout, data, item, icon, active_data, active_propname, index, flt_flag):
+		outliner = context.screen.tangent_outliner     
+		asset_map = outliner.asset_map
+		proxy_map = outliner.proxy_map
+				
+		row = layout.row(align = True)
+		
+		if outliner.list_mode == 'LINKED':
+			row.prop(item, "select_both", text="")
+			
+			obj = proxy_map[item.name] if item.name in proxy_map else item
+			if obj and obj.dupli_group:
+				res = resolution_tools.asset_resolutions[obj.dupli_group.asset_resolution]['short']
+				name = "(%s) %s" % (res, item.name)
+			else:
+				name = item.name
+ 
+			row.label(text=name, icon = 'GROUP')            
+			#row.prop(item, "name", text="", emboss=False)        
+			if item.hide:
+				row.label(text="", icon = 'RESTRICT_VIEW_ON')          
+			if obj:
+				object_icon = 'OBJECT_DATA' if obj.select else 'MATCUBE'
+				row.prop(obj, "select", text="", icon = object_icon, toggle=True, emboss=False)
+			proxy = asset_map[item.name] if not item.proxy and item.name in asset_map else item
+			if proxy:
+				armature_icon = 'OUTLINER_OB_ARMATURE' if proxy.select else 'ARMATURE_DATA'
+				row.prop(proxy, "select", text="", icon = armature_icon, toggle=True, emboss=False)
+
+		else:
+			row.prop(item, "select", text="")
+			row.prop(item, "name", text="", emboss=False, icon = 'OUTLINER_OB_' + item.type)
+
+	def draw_filter(self, context, layout):
+		outliner = context.screen.tangent_outliner
+	
+		col = layout.column()
+		row = col.row(align = True)
+		if outliner.list_mode == 'LINKED':
+			split = row.split(percentage = 0.75, align = True)
+			split.prop(outliner, "list_mode", text="")
+			split.prop(outliner, "active_object_type", text = "")
+		else:
+			row.prop(outliner, "list_mode", text="")
+		
+		row = col.row(align = True)
+		row.operator("tangent_outliner.select_all", text="Select All").select = True
+		row.operator("tangent_outliner.select_all", text="Deselect All").select = False
+	
+	def filter_items(self, context, data, property):
+		'''
+		This is a callback that filters the object list.
+		bitflag_filter_item is a bit reserved for setting whether to show the item.
+		LINKED: Show only the linked objects that have proxies
+		LOCAL: Show only the locally created objects
+		ALL: Show all the objects in the scene
+		'''
+		self.use_filter_show = True
+		
+		objs = getattr(data, property)
+		
+		flt_flags = [self.bitflag_filter_item] * len(objs)
+		flt_neworder = [] #Not used, return empty for optimization
+	  
+		outliner = context.screen.tangent_outliner
+	  
+		displayed_objects = outliner.displayed_objects
+		displayed_objects.clear()
+		
+		asset_map = outliner.asset_map
+		asset_map.clear()
+		
+		proxy_map = outliner.proxy_map
+		proxy_map.clear()
+				  
+		if outliner.list_mode == 'LINKED':
+			for idx, obj in enumerate(objs):
+				if self.is_linked(obj):
+					if obj.proxy:
+						proxy_group = self.find_user_object(context, obj.proxy)
+						proxy_map[obj.name] = proxy_group
+						if proxy_group: 
+							asset_map[proxy_group.name] = obj
+
+						if outliner.active_object_type == 'PROXY':
+							displayed_objects.append(obj)
+						else:
+							flt_flags[idx] &= ~self.bitflag_filter_item #hide proxy
+						
+					else:
+						if not obj.name in asset_map:
+							asset_map[obj.name] = None
+						 
+						if outliner.active_object_type == 'GROUP':                        
+							displayed_objects.append(obj) 
+						else:
+							flt_flags[idx] &= ~self.bitflag_filter_item #hide group
+						   
+				else:
+					flt_flags[idx] &= ~self.bitflag_filter_item #hide obj  
+			
+		elif outliner.list_mode == 'LOCAL':
+			for idx, obj in enumerate(objs):
+				if self.is_linked(obj):
+					flt_flags[idx] &= ~self.bitflag_filter_item #hide obj
+				else:
+					displayed_objects.append(obj)
+		else:
+			for obj in objs:
+				displayed_objects.append(obj)
+				
+		return (flt_flags, flt_neworder)
+		
+	def is_linked(self, obj):
+		if obj.library:
+			return True
+		if obj.data and obj.data.library:
+			return True
+		if obj.dupli_group and obj.dupli_group.library:
+			return True
+			
+		return False
+	
+	def find_user_object(self, context, proxy):
+		for group in proxy.users_group:
+			for dupli_group in group.users_dupli_group: 
+				if dupli_group.name in context.scene.objects:
+					return dupli_group
 
 
 ## ======================================================================
@@ -107,7 +244,7 @@ def clear_scene_error_list():
 
 	scene = bpy.context.scene	
 
-	for prop in scene.validator_errors, scene.validator_warnings:
+	for prop in scene.validator_errors, scene.validator_warnings, scene.validator_auto_fixes:
 		prop.clear()
 
 
@@ -139,7 +276,15 @@ def populate_scene_error_list():
 		warning.description = item.message
 		warning.error_index = index
 
+	for index, item in enumerate( result['auto_fixes'] ):
+		auto_fix = scene.validator_auto_fixes.add()
+		auto_fix.label       = item.parent
+		auto_fix.type        = item.type
+		auto_fix.description = item.message
+		auto_fix.error_index = index
+
 	update_view()
+
 
 ## ======================================================================
 class KikiValidatorRun(bpy.types.Operator):
@@ -161,19 +306,22 @@ class KikiValidatorRun(bpy.types.Operator):
 		f = validator_factory.ValidatorFactory()
 		gc_guard['result'] = result = f.run_all()
 
-		error_count   = len( result['errors'] )
-		warning_count = len( result['warnings'] )
+		error_count    = len( result['errors'] )
+		warning_count  = len( result['warnings'] )
+		auto_fix_count = len( result['auto_fixes'] )
 
 		report_type = { 'INFO' } if not (error_count + warning_count) else { 'ERROR' }
 
 		self.report(
 			report_type,
-			'Validation complete. {} Error{}, {} Warning{}.'
+			'Validation complete. {} Error{}, {} Warning{}, {} Auto-fix{}.'
 			.format(
 				error_count,
 				'' if error_count == 1 else 's',
 				warning_count,
 				'' if warning_count == 1 else 's',
+				auto_fix_count,
+				'' if auto_fix_count == 1 else 'es',
 			)
 		)
 
@@ -207,10 +355,12 @@ class KikiValidatorSave( bpy.types.Operator ):
 
 		error_count   = len( result['errors'] )
 		warning_count = len( result['warnings'] )
+		auto_fix_count = len( result['auto_fixes'] )
 
 		data = {
-			'warnings': [ x.to_dict() for x in result['warnings'] ],
-			'errors':   [ x.to_dict() for x in result['errors'] ],
+			'warnings':   [ x.to_dict() for x in result['warnings'] ],
+			'errors':     [ x.to_dict() for x in result['errors'] ],
+			'auto_fixes': [ x.to_dict() for x in result['auto_fixes'] ],
 		}
 
 		with open( self.filepath, 'w' ) as fp:
@@ -257,6 +407,7 @@ class KikiValidatorLoad(bpy.types.Operator):
 		result = {
 			'warnings': [ ValidationMessage().from_dict(x) for x in data['warnings'] ],
 			'errors':   [ ValidationMessage().from_dict(x) for x in data['errors'] ],
+			'auto_fixes':   [ ValidationMessage().from_dict(x) for x in data['auto_fixes'] ],
 		}
 
 		gc_guard['result'] = result
@@ -405,7 +556,7 @@ class KikiValidatorClearAll(bpy.types.Operator):
 		return True
 
 	def execute(self, context):
-		gc_guard['result'] = { 'errors':[], 'warnings':[] }
+		gc_guard['result'] = { 'errors':[], 'warnings':[], 'auto_fixes':[] }
 		clear_scene_error_list()
 		return {'FINISHED'}
 
@@ -426,8 +577,9 @@ class KikiValidatorPanel(bpy.types.Panel):
 		scene  = context.scene
 		layout = self.layout
 
-		error_count   = len(scene.validator_errors)
-		warning_count = len(scene.validator_warnings)
+		error_count    = len( scene.validator_errors )
+		warning_count  = len( scene.validator_warnings )
+		auto_fix_count = len( scene.validator_auto_fixes )
 
 		layout.operator( 'kiki.validator_run' )
 		layout.operator( 'kiki.validator_clear_all' )
@@ -456,11 +608,21 @@ class KikiValidatorPanel(bpy.types.Panel):
 					context.scene, "validator_warnings_idx", item_dyntip_propname="description")
 			col.operator( 'kiki.validator_select_warning' )
 
+		if auto_fix_count:
+			col = layout.column()
+			col.separator()
+			col.label( 'Validator Automatic Fixes: {} Found'.format(len(scene.validator_warnings)), icon='QUESTION' )
+			col.template_list("MESH_UL_ValidatorWarnings", "", context.scene, "validator_auto_fixes", 
+					context.scene, "validator_auto_fixes_idx", item_dyntip_propname="description")
+			# col.operator( 'kiki.validator_select_auto_fixes' )
+			# col.operator( 'kiki.validator_select_auto_fixes' )
+
 
 ## ======================================================================
 module_classes = [
 	MESH_UL_ValidatorErrors, 
 	MESH_UL_ValidatorWarnings, 
+	MESH_UL_ValidatorAutoFixes, 
 	ValidatorList, 
 	KikiValidatorPanel, 
 	KikiValidatorRun,
@@ -481,6 +643,9 @@ def register():
 	bpy.types.Scene.validator_warnings     = bpy.props.CollectionProperty( type=ValidatorList, options={'SKIP_SAVE'} )
 	bpy.types.Scene.validator_warnings_idx = bpy.props.IntProperty( default=0, min=0 )
 
+	bpy.types.Scene.validator_auto_fixes     = bpy.props.CollectionProperty( type=ValidatorList, options={'SKIP_SAVE'} )
+	bpy.types.Scene.validator_auto_fixes_idx = bpy.props.IntProperty( default=0, min=0 )
+
 
 ## ======================================================================
 def unregister():
@@ -494,7 +659,9 @@ def unregister():
 	Scene = bpy.types.Scene
 
 	for prop in [ 'validator_errors', 'validator_errors_idx', 
-			'validator_warnings', 'validator_warnings_idx' ]:
+			'validator_warnings', 'validator_warnings_idx',
+			'validator_auto_fixes', 'validator_auto_fixes_idx',
+			 ]:
 		locals_dict = locals()
 		try:
 			exec( 'del Scene.{}'.format(prop), globals(), locals_dict ) 

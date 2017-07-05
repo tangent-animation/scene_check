@@ -337,7 +337,7 @@ def sf_modifiers(self):
 
 
 ## ----------------------------------------------------------------------
-def sf_materials(self):
+def sf_materials( self ):
 	scene = bpy.context.scene
 
 	## select object first
@@ -533,7 +533,7 @@ class ValidationMessage( object ):
 	'''
 
 	def __init__( self, ob=None, subob=None, message=None, parent=None, 
-					type=None, data=None, error=True, select_func=None ):
+					type=None, data=None, error=True, auto_fix=None, select_func=None ):
 		self.ob = ob
 		self.subob = subob
 		self.message = message
@@ -542,9 +542,10 @@ class ValidationMessage( object ):
 		self.data = data
 		self.is_error = error
 		self.select_func = select_func
+		self.auto_fix = auto_fix
 
 	def __repr__(self):
-		msg = "<< {}".format( "Error " if self.is_error else "Warning " )
+		msg = "<< {}".format( 'Auto Fix' if self.auto_fix else ("Error " if self.is_error else "Warning ") )
 		if self.type:
 			msg += "Type: %s" % str( self.type )
 		if self.ob:
@@ -602,6 +603,7 @@ class BaseValidator( object ):
 
 	def __init__( self ):
 		self.processed = False
+		self.auto_fixes = []
 		self.warnings = []
 		self.errors = []
 		self.file_full_path = bpy.path.abspath( bpy.data.filepath )

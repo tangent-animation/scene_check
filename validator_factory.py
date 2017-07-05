@@ -78,9 +78,10 @@ class ValidatorFactory(object):
 	## ----------------------------------------------------------------------
 	def run_all( self, *args, task_filter=None, as_json=False ):
 		result = {
-			'errors':   [],
-			'warnings': [],
-			'valid':    []
+			'errors':     [],
+			'warnings':   [],
+			'auto_fixes': [],
+			'valid':      []
 		}
 
 		classes = self.get_class_names( task_filter=task_filter )
@@ -92,6 +93,7 @@ class ValidatorFactory(object):
 			inst.process()
 			result['errors'] += inst.errors
 			result['warnings'] += inst.warnings
+			result['auto_fixes'] += inst.auto_fixes
 		else:
 			result['valid'].append( name )
 
@@ -99,6 +101,7 @@ class ValidatorFactory(object):
 			data = {
 				'warnings': [ x.to_dict() for x in result['warnings'] ],
 				'errors':   [ x.to_dict() for x in result['errors'] ],
+				'auto_fixes':   [ x.to_dict() for x in result['auto_fixes'] ],
 			}
 
 			return data
