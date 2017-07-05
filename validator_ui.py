@@ -493,7 +493,7 @@ class KikiValidatorSelectWarning(bpy.types.Operator):
 	@classmethod
 	def poll(cls, context):
 		result = gc_guard.get( 'result', {'errors':[], 'warnings':[] } )
-		index = context.scene.validator_errors_idx
+		index = context.scene.validator_warnings_idx
 
 		if not len( result['warnings'] ):
 			return False
