@@ -121,7 +121,11 @@ class SurfacingMaterials(BaseValidator):
 										)
 
 					elif node.type == 'GROUP':
-						if ( ('shd.pbr_cloth' in node.node_tree.name 
+						## bugfix: catch floaters in the data block
+						if not node.node_tree:
+							continue
+
+						if ( ('shd.pbr_cloth' in node.node_tree.name
 								or 'pbr.cloth' in node.node_tree.name) and
 								len( node.node_tree.nodes ) == 13 ):
 							cloth += 1
