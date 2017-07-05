@@ -1,5 +1,7 @@
-import re
 import os
+import re
+from functools import partial
+
 import bpy
 
 from scene_check.validators.base_validator import BaseValidator
@@ -46,6 +48,12 @@ class GreasePencil(BaseValidator):
 
 			self.pencil_objects.add( self.scene.grease_pencil.name )
 
+			self.auto_fix_last_error(
+				fix=partial( self.automatic_fix_hook ),
+				message=( 'Remove loose Scene-level grease pencil data {}.'
+						  .format(self.scene.grease_pencil.name) )
+			)
+
 		for item in bpy.data.grease_pencil:
 			if not item.name in self.pencil_objects:
 				## putting it into ob and subob here to make
@@ -58,9 +66,16 @@ class GreasePencil(BaseValidator):
 								.format(item.name) )
 				)
 
+				self.auto_fix_last_error(
+					fix=partial( self.automatic_fix_hook ), 
+					message='Remove loose grease pencil data {}.'.format(item.name)
+				)
+
 			self.pencil_objects.add( item.name )
 
-	def automatic_fix_hook(self):
+	def automatic_fix_hook( self ):
 		for error in self.errors:
 			gp = bpy.data.grease_pencil[error.subob]
 			bpy.data.grease_pencil.remove( gp )
+
+

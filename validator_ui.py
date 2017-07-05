@@ -17,7 +17,7 @@ from scene_check.validators.base_validator import update_view
 ## ======================================================================
 ## need to keep this here to keep things we're relying on from
 ## getting garbage collected before they're due
-gc_guard = { 'result': {'errors':[], 'warnings':[]} }
+gc_guard = { 'result': {'errors':[], 'warnings':[], 'auto_fixes':[] } }
 
 
 ## ======================================================================
@@ -91,137 +91,13 @@ class MESH_UL_ValidatorAutoFixes( bpy.types.UIList ):
 	'''
 	Custom UI List class that allows for filtering in the search.
 	'''
+
+class MESH_UL_ValidatorAutoFixes( bpy.types.UIList ):
+	'''
+	Custom UI List class that allows for filtering in the search.
+	'''
 	draw_item    = _draw_item
 	filter_items = _filter_items
-
-	def draw_item(self, context, layout, data, item, icon, active_data, active_propname, index, flt_flag):
-		outliner = context.screen.tangent_outliner     
-		asset_map = outliner.asset_map
-		proxy_map = outliner.proxy_map
-				
-		row = layout.row(align = True)
-		
-		if outliner.list_mode == 'LINKED':
-			row.prop(item, "select_both", text="")
-			
-			obj = proxy_map[item.name] if item.name in proxy_map else item
-			if obj and obj.dupli_group:
-				res = resolution_tools.asset_resolutions[obj.dupli_group.asset_resolution]['short']
-				name = "(%s) %s" % (res, item.name)
-			else:
-				name = item.name
- 
-			row.label(text=name, icon = 'GROUP')            
-			#row.prop(item, "name", text="", emboss=False)        
-			if item.hide:
-				row.label(text="", icon = 'RESTRICT_VIEW_ON')          
-			if obj:
-				object_icon = 'OBJECT_DATA' if obj.select else 'MATCUBE'
-				row.prop(obj, "select", text="", icon = object_icon, toggle=True, emboss=False)
-			proxy = asset_map[item.name] if not item.proxy and item.name in asset_map else item
-			if proxy:
-				armature_icon = 'OUTLINER_OB_ARMATURE' if proxy.select else 'ARMATURE_DATA'
-				row.prop(proxy, "select", text="", icon = armature_icon, toggle=True, emboss=False)
-
-		else:
-			row.prop(item, "select", text="")
-			row.prop(item, "name", text="", emboss=False, icon = 'OUTLINER_OB_' + item.type)
-
-	def draw_filter(self, context, layout):
-		outliner = context.screen.tangent_outliner
-	
-		col = layout.column()
-		row = col.row(align = True)
-		if outliner.list_mode == 'LINKED':
-			split = row.split(percentage = 0.75, align = True)
-			split.prop(outliner, "list_mode", text="")
-			split.prop(outliner, "active_object_type", text = "")
-		else:
-			row.prop(outliner, "list_mode", text="")
-		
-		row = col.row(align = True)
-		row.operator("tangent_outliner.select_all", text="Select All").select = True
-		row.operator("tangent_outliner.select_all", text="Deselect All").select = False
-	
-	def filter_items(self, context, data, property):
-		'''
-		This is a callback that filters the object list.
-		bitflag_filter_item is a bit reserved for setting whether to show the item.
-		LINKED: Show only the linked objects that have proxies
-		LOCAL: Show only the locally created objects
-		ALL: Show all the objects in the scene
-		'''
-		self.use_filter_show = True
-		
-		objs = getattr(data, property)
-		
-		flt_flags = [self.bitflag_filter_item] * len(objs)
-		flt_neworder = [] #Not used, return empty for optimization
-	  
-		outliner = context.screen.tangent_outliner
-	  
-		displayed_objects = outliner.displayed_objects
-		displayed_objects.clear()
-		
-		asset_map = outliner.asset_map
-		asset_map.clear()
-		
-		proxy_map = outliner.proxy_map
-		proxy_map.clear()
-				  
-		if outliner.list_mode == 'LINKED':
-			for idx, obj in enumerate(objs):
-				if self.is_linked(obj):
-					if obj.proxy:
-						proxy_group = self.find_user_object(context, obj.proxy)
-						proxy_map[obj.name] = proxy_group
-						if proxy_group: 
-							asset_map[proxy_group.name] = obj
-
-						if outliner.active_object_type == 'PROXY':
-							displayed_objects.append(obj)
-						else:
-							flt_flags[idx] &= ~self.bitflag_filter_item #hide proxy
-						
-					else:
-						if not obj.name in asset_map:
-							asset_map[obj.name] = None
-						 
-						if outliner.active_object_type == 'GROUP':                        
-							displayed_objects.append(obj) 
-						else:
-							flt_flags[idx] &= ~self.bitflag_filter_item #hide group
-						   
-				else:
-					flt_flags[idx] &= ~self.bitflag_filter_item #hide obj  
-			
-		elif outliner.list_mode == 'LOCAL':
-			for idx, obj in enumerate(objs):
-				if self.is_linked(obj):
-					flt_flags[idx] &= ~self.bitflag_filter_item #hide obj
-				else:
-					displayed_objects.append(obj)
-		else:
-			for obj in objs:
-				displayed_objects.append(obj)
-				
-		return (flt_flags, flt_neworder)
-		
-	def is_linked(self, obj):
-		if obj.library:
-			return True
-		if obj.data and obj.data.library:
-			return True
-		if obj.dupli_group and obj.dupli_group.library:
-			return True
-			
-		return False
-	
-	def find_user_object(self, context, proxy):
-		for group in proxy.users_group:
-			for dupli_group in group.users_dupli_group: 
-				if dupli_group.name in context.scene.objects:
-					return dupli_group
 
 
 ## ======================================================================
@@ -467,8 +343,9 @@ class KikiValidatorSelectError(bpy.types.Operator):
 			## tricksy
 			# print( "Error: {} ({})".format( error.select_func, type(error.select_func)) )
 			try:
-				func = get_select_func( error.select_func )
-				func( error )
+				if error.select_func:
+					func = get_select_func( error.select_func )
+					func( error )
 			except Exception as e:
 				report_type = { 'ERROR' }
 				self.report( report_type, 'Unable to select (likely due to Driven visibility).' )
@@ -545,6 +422,69 @@ class KikiValidatorSelectWarning(bpy.types.Operator):
 
 
 ## ======================================================================
+class KikiValidatorSelectAutoFix(bpy.types.Operator):
+	"""Selects the objects related to the currently-selected automatic fix."""
+	bl_idname = "kiki.validator_select_auto_fix"
+	bl_label = "Validator: Select Auto Fix"
+
+	@classmethod
+	def poll(cls, context):
+		result = gc_guard.get( 'result', {'errors':[], 'warnings':[], 'auto_fixes':[] } )
+		index = context.scene.validator_auto_fixes_idx
+
+		# print( result, index )
+
+		if not len( result['auto_fixes'] ):
+			return False
+		try:
+			auto_fix = result['auto_fixes'][index]
+		except:
+			return False
+
+		if not auto_fix.select_func or auto_fix.select_func == 'null':
+			return False
+
+		return True
+
+	def execute(self, context):
+		from scene_check.validators import base_validator as bv
+		reload(bv)
+		from scene_check.validators.base_validator import get_select_func		
+
+		scene = context.scene
+		result = gc_guard.get( 'result', { 'errors':[], 'warnings':[], 'auto_fixes':[] } )
+
+		try:
+			bpy.ops.object.mode_set( mode='OBJECT' )
+		except:
+			pass
+
+		fix_count = len( result['auto_fixes'] )
+
+		if fix_count:
+			index = scene.validator_auto_fixes_idx
+			auto_fix = result['auto_fixes'][index]
+
+			## tricksy
+			try:
+				func = get_select_func( auto_fix.select_func )
+				func( auto_fix )
+			except Exception as e:
+				report_type = { 'ERROR' }
+				self.report( report_type, 'Unable to select.' )
+				raise e
+		else:
+			# print( result['auto_fixes'] )
+			report_type = { 'ERROR' }
+			self.report( report_type, 'No automatic fix for selection.' )
+
+		return {'FINISHED'}
+
+	def invoke(self, context, event):
+		return self.execute( context )
+
+
+## ======================================================================
 class KikiValidatorClearAll(bpy.types.Operator):
 	"""Clears the Errors and Warnings lists."""
 	bl_idname = "kiki.validator_clear_all"
@@ -611,10 +551,10 @@ class KikiValidatorPanel(bpy.types.Panel):
 		if auto_fix_count:
 			col = layout.column()
 			col.separator()
-			col.label( 'Validator Automatic Fixes: {} Found'.format(len(scene.validator_warnings)), icon='QUESTION' )
-			col.template_list("MESH_UL_ValidatorWarnings", "", context.scene, "validator_auto_fixes", 
+			col.label( 'Validator Automatic Fixes: {} Found'.format(len(scene.validator_auto_fixes)), icon='SAVE_COPY' )
+			col.template_list("MESH_UL_ValidatorAutoFixes", "", context.scene, "validator_auto_fixes", 
 					context.scene, "validator_auto_fixes_idx", item_dyntip_propname="description")
-			# col.operator( 'kiki.validator_select_auto_fixes' )
+			col.operator( 'kiki.validator_select_auto_fix' )
 			# col.operator( 'kiki.validator_select_auto_fixes' )
 
 
@@ -628,6 +568,7 @@ module_classes = [
 	KikiValidatorRun,
 	KikiValidatorSelectError,
 	KikiValidatorSelectWarning,
+	KikiValidatorSelectAutoFix,
 	KikiValidatorLoad,
 	KikiValidatorSave,
 	KikiValidatorClearAll,

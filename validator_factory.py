@@ -99,9 +99,9 @@ class ValidatorFactory(object):
 
 		if as_json:
 			data = {
-				'warnings': [ x.to_dict() for x in result['warnings'] ],
-				'errors':   [ x.to_dict() for x in result['errors'] ],
-				'auto_fixes':   [ x.to_dict() for x in result['auto_fixes'] ],
+				'warnings':   [ x.to_dict() for x in result['warnings'] ],
+				'errors':     [ x.to_dict() for x in result['errors'] ],
+				'auto_fixes': [ x.to_dict() for x in result['auto_fixes'] ],
 			}
 
 			return data

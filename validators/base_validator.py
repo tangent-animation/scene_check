@@ -1,4 +1,5 @@
 import os, re
+from copy import deepcopy
 import bpy
 import bmesh
 from bpy import ops
@@ -545,15 +546,15 @@ class ValidationMessage( object ):
 
 	def __init__( self, ob=None, subob=None, message=None, parent=None, 
 					type=None, data=None, error=True, auto_fix=None, select_func=None ):
-		self.ob = ob
-		self.subob = subob
-		self.message = message
-		self.parent = parent
-		self._type = type
-		self.data = data
-		self.is_error = error
-		self.select_func = select_func
-		self.auto_fix = auto_fix
+		self.ob          = ob
+		self.subob       = subob
+		self.message     = message
+		self.parent      = parent
+		self._type       = type
+		self.data        = data
+		self.is_error    = error
+		self.select_func = 'null' if select_func is None else select_func
+		self.auto_fix    = auto_fix
 
 	def __repr__(self):
 		msg = "<< {}".format( 'Auto Fix' if self.auto_fix else ("Error " if self.is_error else "Warning ") )
@@ -602,6 +603,9 @@ class ValidationMessage( object ):
 		## trick for comprehensions
 		return self
 
+	def copy( self ):
+		return deepcopy( self )
+
 
 ## ----------------------------------------------------------------------
 class BaseValidator( object ):
@@ -609,18 +613,18 @@ class BaseValidator( object ):
 	automatic_fix = False
 	log_name = 'check_result_log.json'
 
-	rig_regex = re.compile( r"(con|rig|ncr)\.([A-Za-z0-9_]+)\.([0-9]{3})" )
+	rig_regex   = re.compile( r"(con|rig|ncr)\.([A-Za-z0-9_]+)\.([0-9]{3})" )
 	proxy_regex = re.compile( r"(grp)\.([A-Za-z0-9_]+)\.([0-9]{3})_proxy" )
 
 	def __init__( self ):
-		self.processed = False
-		self.auto_fixes = []
-		self.warnings = []
-		self.errors = []
+		self.processed      = False
+		self.auto_fixes     = []
+		self.warnings       = []
+		self.errors         = []
 		self.file_full_path = bpy.path.abspath( bpy.data.filepath )
-		self.dir_name = os.path.dirname( self.file_full_path )
-		self.file_name = os.path.basename( self.file_full_path )
-		self.root_name = self.file_name.partition('.')[0]
+		self.dir_name       = os.path.dirname( self.file_full_path )
+		self.file_name      = os.path.basename( self.file_full_path )
+		self.root_name      = self.file_name.partition('.')[0]
 
 		try:
 			self.asset_type = self.root_name[:3]
@@ -631,7 +635,7 @@ class BaseValidator( object ):
 		if not self.log_name in bpy.data.texts:
 			log = bpy.data.texts.new( self.log_name )
 		else:
-			log = bpy.data.texts[self.log_name]
+			log = bpy.data.texts[ self.log_name ]
 
 		if len( self.errors ):
 			for error in self.errors:
@@ -651,19 +655,39 @@ class BaseValidator( object ):
 		self.processed = True
 
 	def auto_fix_errors( self ):
+		raise DeprecationWarning( 'This function is not meant to be called directly any more.' )
 		if self.automatic_fix:
 			self.automatic_fix_hook()
 			self.scene.update()
 
-	def error(self, ob=None, subob=None, message=None, type=None, data=None, select_func=None ):
+	def error( self, ob=None, subob=None, message=None, type=None, data=None, select_func=None ):
 		error = ValidationMessage( ob, subob, message, parent=self.id(),
 								   type=type, data=data, select_func=select_func )
 		self.errors.append( error )
 
-	def warning(self, ob=None, subob=None, message=None, type=None, data=None, select_func=None ):
+	def warning( self, ob=None, subob=None, message=None, type=None, data=None, select_func=None ):
 		warning = ValidationMessage( ob, subob, message, parent=self.id(), 
 									 type=type, data=data, error=False, select_func=select_func )
 		self.warnings.append( warning )
+
+	def auto_fix( self, fix, ob=None, subob=None, message=None, type=None, data=None, select_func=None ):
+
+		if fix is None:
+			raise ValueError('"fix" function must assigned.')
+
+		auto_fix = ValidationMessage( ob, subob, message, parent=self.id(), 
+								 type=type, data=data, error=False, 
+								 auto_fix=fix, select_func=select_func )
+		self.auto_fixes.append( auto_fix )
+
+	def auto_fix_last_error( self, fix, message=None ):
+		if fix is None:
+			raise ValueError('"fix" function must assigned.')
+
+		auto_fix = self.errors[-1].copy()
+		auto_fix.auto_fix = fix
+		auto_fix.message = message if message else auto_fix.message
+		self.auto_fixes.append( auto_fix )
 
 	def get_objects( self, type=None ):
 		if self.scene and len(self.scene.objects):
