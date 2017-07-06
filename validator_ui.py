@@ -1,5 +1,6 @@
 ## ======================================================================
 
+from copy import deepcopy
 from imp import reload
 import json
 import os
@@ -7,6 +8,7 @@ import sys
 import time
 
 import bpy
+from bpy.app.handlers import persistent
 
 path = os.path.dirname( os.path.abspath(__file__) )
 if not path in sys.path:
@@ -17,7 +19,8 @@ from scene_check.validators.base_validator import update_view
 ## ======================================================================
 ## need to keep this here to keep things we're relying on from
 ## getting garbage collected before they're due
-gc_guard = { 'result': {'errors':[], 'warnings':[], 'auto_fixes':[] } }
+result_default = { 'result': {'errors':[], 'warnings':[], 'auto_fixes':[] } }
+gc_guard = deepcopy( result_default )
 
 
 ## ======================================================================
@@ -125,11 +128,38 @@ def clear_scene_error_list():
 
 
 ## ======================================================================
+def populate_scene_auto_fix_list():
+	'''
+	Once the data is collected in gc_guard, this function
+	fills the in-scene Auto-fix memory spot for the UI to
+	display, and for searching.
+
+	This function is broken out on its own because the
+	apply auto fix operator will remove the fix from
+	the gc_guard result list.
+	'''
+
+	result = gc_guard.get( 'result', result_default )
+	scene = bpy.context.scene
+
+	scene.validator_auto_fixes.clear()
+
+	for index, item in enumerate( result['auto_fixes'] ):
+		auto_fix = scene.validator_auto_fixes.add()
+		auto_fix.label       = item.parent
+		auto_fix.type        = item.type
+		auto_fix.description = item.message
+		auto_fix.error_index = index
+
+	update_view()
+
+
+## ======================================================================
 def populate_scene_error_list():
 	'''
 	Once the data is collected in gc_guard, this function
-	fills the in-scene Error and Warning memory spots for
-	the UI to display, and for searching.
+	fills the in-scene Error, Warning, and Auto-fix memory
+	spots for the UI to display, and for searching.
 	'''
 
 	result = gc_guard['result']
@@ -152,14 +182,17 @@ def populate_scene_error_list():
 		warning.description = item.message
 		warning.error_index = index
 
-	for index, item in enumerate( result['auto_fixes'] ):
-		auto_fix = scene.validator_auto_fixes.add()
-		auto_fix.label       = item.parent
-		auto_fix.type        = item.type
-		auto_fix.description = item.message
-		auto_fix.error_index = index
+	populate_scene_auto_fix_list()
 
 	update_view()
+
+
+## ======================================================================
+@persistent
+def file_load_post_cb( *args ):
+	print("+ ValidatorUI: File Load Callback.")
+	clear_scene_error_list()
+	gc_guard = deepcopy( result_default )
 
 
 ## ======================================================================
@@ -587,6 +620,13 @@ def register():
 	bpy.types.Scene.validator_auto_fixes     = bpy.props.CollectionProperty( type=ValidatorList, options={'SKIP_SAVE'} )
 	bpy.types.Scene.validator_auto_fixes_idx = bpy.props.IntProperty( default=0, min=0 )
 
+	clear_scene_error_list()
+
+	## new feature: file load handler
+	## remove the information on file load so the UI isn't broken
+
+	if not file_load_post_cb in bpy.app.handlers.load_post:
+		bpy.app.handlers.load_post.append( file_load_post_cb )
 
 ## ======================================================================
 def unregister():
@@ -597,7 +637,7 @@ def unregister():
 		except:
 			pass
 
-	Scene = bpy.types.Scene
+	scene = bpy.types.Scene
 
 	for prop in [ 'validator_errors', 'validator_errors_idx', 
 			'validator_warnings', 'validator_warnings_idx',
@@ -605,9 +645,14 @@ def unregister():
 			 ]:
 		locals_dict = locals()
 		try:
-			exec( 'del Scene.{}'.format(prop), globals(), locals_dict ) 
+			exec( 'del scene.{}'.format(prop), globals(), locals_dict ) 
 		except:
 			pass
+
+
+	## new feature: file load handler
+	if file_load_post_cb in bpy.app.handlers.load_post:
+		bpy.app.handlers.load_post.remove( file_load_post_cb )
 
 
 ## ======================================================================
