@@ -34,26 +34,37 @@ class SceneLayers(BaseValidator):
 		super(SceneLayers, self).__init__()
 
 	def process_hook( self ):
-		armatures = [ x for x in self.scene.objects if
-			self.rig_regex.match( x.name )
-		]
+		armatures = self.get_objects( type='ARMATURE' )
+		empties   = self.get_objects( type='EMPTY' )
 
-		characters  = [ x for x in armatures if x.name.startswith('grp.') ]
+		characters  = [ x for x in (armatures+empties) if x.name.startswith('grp.') ]
 		constraints = [ x for x in armatures if x.name.startswith('con.') ]
 
 		for character in characters:
+			print("+ Processing {}...".format( character.name ))
 			layers = self.layers( 1 )
 			test = sum([ x == y for x,y in zip(layers, character.layers) ])
 			if not test == 20:
 				self.error(
-					ob=ob.name,
+					ob=character.name,
 					select_func='object',
 					data=1,
-					type='SCENE:LAYERS',
+					type='SCENE:CHARACTER LAYERS',
 					message="Character Armature object {} not on layer 1.'"
-							.format(ob.name)
+							.format(character.name)
 				)
-		
+
+				fix_code = (
+					'bpy.data.objects["{}"].layers = {}'
+				).format( character.name, self.layers(1) )
+
+				self.auto_fix_last_error(
+					fix_code,
+					message='Set correct layers for character "{}".'.format( character.name )
+				)
+			else:
+				print("Character {} passes.".format( character.name ))
+
 		for constraint in constraints:
 			layers = self.layers( 10 )
 			test = sum([ x == y for x,y in zip(layers, constraint.layers) ])
@@ -62,10 +73,20 @@ class SceneLayers(BaseValidator):
 					ob=constraint.name,
 					select_func='object',
 					data=10,
-					type='SCENE:LAYERS',
+					type='SCENE:CONSTRAINT LAYERS',
 					message="Constraint Armature object {} not on layer 10.'"
 							.format(constraint.name)
 				)
+
+				fix_code = (
+					'bpy.data.objects["{}"].layers = {}'
+				).format( constraint.name, self.layers(10) )
+
+				self.auto_fix_last_error(
+					fix_code,
+					message='Set correct layers for constraint "{}".'.format( constraint.name )
+				)
+
 
 	def layers(self, *args):
 		for index in args:

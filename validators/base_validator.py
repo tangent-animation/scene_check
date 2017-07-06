@@ -685,7 +685,7 @@ class BaseValidator( object ):
 		if fix is None:
 			raise ValueError('"fix" code must assigned.')
 
-		print( "Converting error into auto-fix:\n{}\n\n".format(repr(self.errors[-1])) )
+		# print( "Converting error into auto-fix:\n{}\n\n".format(repr(self.errors[-1])) )
 
 		auto_fix = self.errors[-1].copy()
 		auto_fix.auto_fix = fix
@@ -697,7 +697,7 @@ class BaseValidator( object ):
 		if fix is None:
 			raise ValueError('"fix" code must assigned.')
 
-		print( "Converting warning into auto-fix:\n{}\n\n".format(repr(self.warnings[-1])) )
+		# print( "Converting warning into auto-fix:\n{}\n\n".format(repr(self.warnings[-1])) )
 
 		auto_fix = self.warnings[-1].copy()
 		auto_fix.auto_fix = fix
