@@ -1,4 +1,4 @@
-vimport re
+import re
 import os
 import bpy
 
@@ -11,7 +11,6 @@ class RigNames(BaseValidator):
 	def process_hook( self ):
 		base_name = os.path.basename( bpy.data.filepath ).replace('.blend','')
 		char_name = base_name.rpartition('_')[2]
-
 		base_rig_name = 'rig.{}.000'.format( base_name )
 		if not base_rig_name in bpy.data.objects:
 			self.error( message="Base rig object is missing ({})."

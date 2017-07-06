@@ -11,9 +11,7 @@ class RigVisibility(BaseValidator):
 		super(RigVisibility, self).__init__()
 
 	def process_hook( self ):
-		self.processed = True
 
-	def automatic_fix_hook(self):
 		armatures = self.get_objects( type='ARMATURE' )
 		if not len(armatures):
 			return
@@ -21,16 +19,30 @@ class RigVisibility(BaseValidator):
 		regex = re.compile( r"^(ctl)\.([A-Za-z\_]+)(_tweak|_secondary)\.([CLR])\.([0-9]{3})$" )
 
 		for arm in armatures:
-			changed = 0
 			for bone in arm.pose.bones:
-				match = regex.match( bone.name )
-				modified = False
 				## process all non-control bones
-				if match:
-					if not bone.bone.hide:
-						bone.bone.hide = True
-						modified = True
-				if modified:
-					changed += 1
-			if changed:
-				print( "+ Automatically hid secondary / tweaker bones on {} ({} bones hidden).".format(arm.name, changed) )
+				match = regex.match( bone.name )
+				if match and not bone.bone.hide:
+					self.error(
+						ob=arm.name,
+						subob=bone.name,
+						select_func='armature_bone',
+						type='RIG:BONE VISIBILITY',
+						message='Bone "{}::{}" should be hidden.'
+								.format( arm.name, bone.name )
+					)
+
+					fix_code = (
+						'bone = bpy.data.objects["{}"].data.bones["{}"]\n'
+						'bone.hide = True'
+					).format( arm.name, bone.name )
+
+					self.auto_fix_last_error(
+						fix_code,
+						message=(
+							'Hide bone "{}::{}".'
+							.format( arm.name, bone.name )
+						)
+					)
+
+		self.processed = True
