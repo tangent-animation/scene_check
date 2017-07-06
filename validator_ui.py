@@ -112,6 +112,9 @@ def set_active_text_block( text:bpy.types.Text ):
 		for space in area.spaces:
 			if space.type == 'TEXT_EDITOR':
 				space.text = text
+				space.show_line_numbers     = True
+				space.show_word_wrap        = True
+				space.show_syntax_highlight = True
 
 
 ## ======================================================================
@@ -253,6 +256,7 @@ class KikiValidatorRun(bpy.types.Operator):
 			bpy.data.texts.new( auto_fix_log_name )
 		log = bpy.data.texts[ auto_fix_log_name ]
 		log.clear()
+		log.write( 'import bpy\n' )
 		return self.execute( context )
 
 
@@ -580,7 +584,7 @@ class KikiValidatorRunAutoFix( bpy.types.Operator ):
 			print( auto_fix.auto_fix )
 			exec( auto_fix.auto_fix )
 
-			log.write( repr(auto_fix) )
+			log.write( '"""{}"""'.format(repr(auto_fix)) )
 			log.write( "\n\n{}\n\n".format(auto_fix.auto_fix) )
 			set_active_text_block( log )
 
@@ -626,7 +630,7 @@ class KikiValidatorRunAllAutoFixes( bpy.types.Operator ):
 				print( auto_fix.auto_fix )
 				exec( auto_fix.auto_fix )
 
-				log.write( repr(auto_fix) )
+				log.write( '"""{}"""'.format(repr(auto_fix)) )
 				log.write( "\n\n{}\n\n".format(auto_fix.auto_fix) )
 				set_active_text_block( log )
 
