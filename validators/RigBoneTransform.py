@@ -41,8 +41,22 @@ class RigBoneTransform(BaseValidator):
 						ob=arm.name,
 						subob=bone.name,
 						select_func='armature_bone',
+						type='special',
 						message='{}::{}: Bone has invalid rotation order.'
 							.format(arm.name, bone.name) )
+
+					fix_code = (
+						'bone = bpy.data.objects["{}"].pose.bones["{}"]\n'
+						'bone.rotation_mode = "XYZ"'
+					).format( arm.name, bone.name )
+
+					self.auto_fix_last_error(
+						fix_code,
+						message=(
+							'Fix rotation order on "{}::{}".'
+							.format( arm.name, bone.name )
+						)
+					)
 
 				if 'god' in bone.name and not bone.parent:
 					if sum(bone.head):
@@ -55,10 +69,10 @@ class RigBoneTransform(BaseValidator):
 								.format(arm.name, bone.name) )
 
 
-	def automatic_fix_hook( self ):
-		for error in self.errors:
-			if error.type == 'special':
-				bone = error.ob.pose.bones[error.subob]
-				bone.rotation_mode = 'XYZ'
-				print( "+ Fixed rotation order for {}::{}."
-						.format(error.ob.name, error.subob) )
+	# def automatic_fix_hook( self ):
+	# 	for error in self.errors:
+	# 		if error.type == 'special':
+	# 			bone = error.ob.pose.bones[error.subob]
+	# 			bone.rotation_mode = 'XYZ'
+	# 			print( "+ Fixed rotation order for {}::{}."
+	# 					.format(error.ob.name, error.subob) )
