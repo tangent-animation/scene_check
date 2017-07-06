@@ -592,11 +592,12 @@ class KikiValidatorRunAutoFix( bpy.types.Operator ):
 			populate_scene_auto_fix_list()
 
 		except Exception as e:
+			print( e.args[0] )
 			report_type = { 'ERROR' }
-			self.report( report_type, 'Unable to run auto-fix (please see error log).' )
-			print( e )
+			# self.report( report_type, 'Unable to run auto-fix (please see error log).' )
+			print( '-- Unable to run auto-fix (please see error log).' )
 			log.clear()
-			log.write( str(e) )
+			log.write( e.args[0] )
 
 		return {'FINISHED'}
 
@@ -637,11 +638,12 @@ class KikiValidatorRunAllAutoFixes( bpy.types.Operator ):
 				finished.append(index)
 
 			except Exception as e:
+				print( e.args[0] )
 				report_type = { 'ERROR' }
-				self.report( report_type, 'Unable to run auto-fix (please see error log).' )
-				print( e )
+				# self.report( report_type, 'Unable to run auto-fix (please see error log).' )
+				print( '-- Unable to run auto-fix (please see error log).' )
 				log.clear()
-				log.write( str(e) )
+				log.write( e.args[0] )
 
 		for index in reversed( finished ):
 			result['auto_fixes'].pop( index )

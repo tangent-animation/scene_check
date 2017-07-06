@@ -16,12 +16,17 @@ class ScreenPurgeLayouts(BaseValidator):
 		for screen in bpy.data.screens:
 			if regex.match( screen.name ) and screen.users:
 				self.error(
-					ob=screen,
+					ob=screen.name,
+					type='SCREEN:EXCESS',
 					message="Excess Screen found: {}.".format( screen.name )
 				)
 
-	def automatic_fix_hook(self):
-		for error in self.errors:
-			error.ob.user_clear()
-			print( "\+ Marked excess scene {} for removal on save.".format(error.ob.name) )
+				fix_code = (
+					'screen = bpy.data.screens["{}"]\n'
+					'screen.user_clear()\n'
+				).format( screen.name )
 
+				self.auto_fix_last_error(
+					fix_code,
+					message='Mark screen layout "{}" for deletion on save.'.format( screen.name )
+				)

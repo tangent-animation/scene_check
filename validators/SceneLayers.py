@@ -87,6 +87,28 @@ class SceneLayers(BaseValidator):
 					message='Set correct layers for constraint "{}".'.format( constraint.name )
 				)
 
+		scene = self.scene
+
+		if hasattr( scene, 'namedlayers' ):
+			count = sum([ scene.namedlayers.layers[index] == x for index, x in self.layer_names.items() ])
+			if not count == len( self.layer_names ):
+				self.error(
+					ob=scene.name,
+					type='SCENE:LAYER NAMES',
+					message='Layer names in scene "{}" do not match show standard.'
+							.format( scene.name )
+				)
+
+				fix_code = (
+					'layers = bpy.data.scenes["{}"].namedlayers.layers\n'
+				).format( scene.name )
+				for index, name in self.layer_names.items():
+					fix_code += 'layers[{}].name = "{}"\n'.format( index, name )
+
+				self.auto_fix_last_error(
+					fix_code,
+					message='Set layer names for scene "{}".'.format( scene.name )
+				)
 
 	def layers(self, *args):
 		for index in args:
@@ -98,15 +120,15 @@ class SceneLayers(BaseValidator):
 			result[index] = True
 		return( result )
 
-	def automatic_fix_hook( self ):
-		for index, name in self.layer_names.items():
-			try:
-				scene.namedlayers.layers[index].name = name
-			except:
-				continue
+	# def automatic_fix_hook( self ):
+	# 	for index, name in self.layer_names.items():
+	# 		try:
+	# 			scene.namedlayers.layers[index].name = name
+	# 		except:
+	# 			continue
 
-		for error in self.errors:
-			ob = self.scene.objects[ error.ob ]
-			ob.layers = self.layers( error.data )
-			print( 'Set proper layer for "{}" -- now {}.'.format(ob.name, error.data) )
+	# 	for error in self.errors:
+	# 		ob = self.scene.objects[ error.ob ]
+	# 		ob.layers = self.layers( error.data )
+	# 		print( 'Set proper layer for "{}" -- now {}.'.format(ob.name, error.data) )
 
