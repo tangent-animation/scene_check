@@ -39,7 +39,7 @@ class RigBoneLocking( BaseValidator ):
 								.format(arm.name, bone.name) )
 
 						fix_code = (
-							'bone = bpy.data.objects["{}"].data.bones["{}"]\n'
+							'bone = bpy.data.objects["{}"].pose.bones["{}"]\n'
 							'try:\n'
 							'\tbone.lock_location = [True] * 3\n'
 							'\tbone.lock_rotation = [True] * 3\n'
