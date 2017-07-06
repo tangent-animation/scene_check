@@ -693,6 +693,18 @@ class BaseValidator( object ):
 			auto_fix.message = message
 		self.auto_fixes.append( auto_fix )
 
+	def auto_fix_last_warning( self, fix, message=None ):
+		if fix is None:
+			raise ValueError('"fix" code must assigned.')
+
+		print( "Converting warning into auto-fix:\n{}\n\n".format(repr(self.warnings[-1])) )
+
+		auto_fix = self.warnings[-1].copy()
+		auto_fix.auto_fix = fix
+		if message:
+			auto_fix.message = message
+		self.auto_fixes.append( auto_fix )
+
 	def get_objects( self, type=None ):
 		if self.scene and len(self.scene.objects):
 			if type:

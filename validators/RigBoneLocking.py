@@ -4,43 +4,53 @@ import bpy
 
 from scene_check.validators.base_validator import BaseValidator
 
-class RigBoneLocking(BaseValidator):
+class RigBoneLocking( BaseValidator ):
 	'''
-	Checks for and automatically fixes bone locks on
-	non-control bones in all armatures.
+	Checks for and bone locks on non-control bones in all armatures,
+	providing automatic fixes for improperly locked bones.
 	'''
 
 	automatic_fix = True
+	regex = re.compile( r"^(ctl)\.([A-Za-z\_]+)\.([CLR])\.([0-9]{3})$" )
 
 	def __init__(self):
 		super(RigBoneLocking, self).__init__()
 
 	def process_hook( self ):
-		self.processed = True
-
-	def automatic_fix_hook(self):
 		armatures = self.get_objects( type='ARMATURE' )
 		if not len(armatures):
 			return
 
-		regex = re.compile( r"^(ctl)\.([A-Za-z\_]+)\.([CLR])\.([0-9]{3})$" )
-
 		for arm in armatures:
-			changed = 0
 			for bone in arm.pose.bones:
-				match = regex.match( bone.name )
-				modified = False
 				## process all non-control bones
+				match = self.regex.match( bone.name )
 				if not match:
-					for attr in bone.lock_location, bone.lock_rotation, bone.lock_scale:
-						for index in range(3):
-							try:
-								if not attr[index]:
-									attr[index] = True
-									modified = True
-							except AttributeError:
-								continue
-				if modified:
-					changed += 1
-			if changed:
-				print( "+ Automatically processed bone locks on {} ({} / {} bones changed).".format(arm.name, changed, len(arm.pose.bones)) )
+					total = []
+					for index in range(3):
+						for attr in bone.lock_location, bone.lock_rotation, bone.lock_scale:
+							total.append( attr[index] )
+
+					if not sum(total) == 9:
+						self.warning( ob=arm.name, subob=bone.name,
+							type='RIG: BONE LOCK',
+							select_func='armature_bone',
+							message="{}::'{}' non-control bone not properly locked."
+								.format(arm.name, bone.name) )
+
+						fix_code = (
+							'bone = bpy.data.objects["{}"].data.bones["{}"]\n'
+							'try:\n'
+							'\tbone.lock_location = [True] * 3\n'
+							'\tbone.lock_rotation = [True] * 3\n'
+							'\tbone.lock_scale    = [True] * 3\n'
+							'except AttributeError:\n'
+							'\tpass'
+						).format( arm.name, bone.name )
+
+						self.auto_fix_last_warning(
+							fix_code,
+							message='Lock non-control bone "{}".'.format( bone.name )
+						)
+
+		self.processed = True
