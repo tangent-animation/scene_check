@@ -33,13 +33,26 @@ class RigCharacterMeshLocks(BaseValidator):
 							.format( child.name, arm.name )
 						)
 
-	def automatic_fix_hook( self ):
-		for error in self.errors:
-			if error.type == 'rig_mesh_hide':
-				try:
-					ob = bpy.context.scene.objects[error.ob]
-				except KeyError:
-					continue
-				ob.hide_select = True
-				print( "+ Automatically fixed mesh locking for rig mesh {}.".format(ob.name) )
+						fix_code = (
+							'ob = bpy.data.objects["{}"]\n'
+							'ob.hide_select = True'
+						).format( child.name )
+
+						self.auto_fix_last_error(
+							fix_code,
+							message=(
+								'Properly set pickability of child object "{}" under rig "{}".'
+								.format( child.name, arm.name )
+							)
+						)
+
+	# def automatic_fix_hook( self ):
+	# 	for error in self.errors:
+	# 		if error.type == 'rig_mesh_hide':
+	# 			try:
+	# 				ob = bpy.context.scene.objects[error.ob]
+	# 			except KeyError:
+	# 				continue
+	# 			ob.hide_select = True
+	# 			print( "+ Automatically fixed mesh locking for rig mesh {}.".format(ob.name) )
 
