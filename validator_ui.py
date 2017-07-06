@@ -470,6 +470,41 @@ class KikiValidatorSelectWarning(bpy.types.Operator):
 
 
 ## ======================================================================
+def auto_fix_poll( context:bpy.types.Context, run:bool=False, select:bool=False ) -> bool:
+	"""
+	Determines whether one of the auto-fix operators can run.
+
+	:param context: The Blender context (currently not used)
+	:param run: If True, tests whether the auto-fix can be run. Default: False.
+	:param select: If True, tests whether the auto-fix can be selected. Default: False.
+
+	:returns: True if the operator can be executed; False otherwise.
+	"""
+
+	if run and select:
+		raise ValueError( 'auto_fix_poll: please only choose one of "run" and "select".' )
+
+	result = gc_guard.get( 'result', result_default )
+	index = context.scene.validator_auto_fixes_idx
+
+	if not len( result['auto_fixes'] ):
+		return False
+	try:
+		auto_fix = result['auto_fixes'][index]
+	except:
+		return False
+
+	if run:
+		if not auto_fix.auto_fix or auto_fix.auto_fix == '':
+			return False
+	if select:
+		if not auto_fix.select_func or auto_fix.select_func == 'null':
+			return False
+
+	return True
+
+
+## ======================================================================
 class KikiValidatorSelectAutoFix(bpy.types.Operator):
 	"""Selects the objects related to the currently-selected automatic fix."""
 	bl_idname = "kiki.validator_select_auto_fix"
@@ -477,22 +512,7 @@ class KikiValidatorSelectAutoFix(bpy.types.Operator):
 
 	@classmethod
 	def poll(cls, context):
-		result = gc_guard.get( 'result', {'errors':[], 'warnings':[], 'auto_fixes':[] } )
-		index = context.scene.validator_auto_fixes_idx
-
-		# print( result, index )
-
-		if not len( result['auto_fixes'] ):
-			return False
-		try:
-			auto_fix = result['auto_fixes'][index]
-		except:
-			return False
-
-		if not auto_fix.select_func or auto_fix.select_func == 'null':
-			return False
-
-		return True
+		return auto_fix_poll( context, select=True )
 
 	def execute(self, context):
 		from scene_check.validators import base_validator as bv
@@ -533,29 +553,14 @@ class KikiValidatorSelectAutoFix(bpy.types.Operator):
 
 
 ## ======================================================================
-class KikiValidatorRunAutoFix(bpy.types.Operator):
+class KikiValidatorRunAutoFix( bpy.types.Operator ):
 	"""Runs the currently-selected automatic fix."""
 	bl_idname = "kiki.validator_run_auto_fix"
 	bl_label = "Validator: Run Auto Fix"
 
 	@classmethod
 	def poll(cls, context):
-		result = gc_guard.get( 'result', result_default )
-		index = context.scene.validator_auto_fixes_idx
-
-		# print( result, index )
-
-		if not len( result['auto_fixes'] ):
-			return False
-		try:
-			auto_fix = result['auto_fixes'][index]
-		except:
-			return False
-
-		if not auto_fix.auto_fix or auto_fix.auto_fix == '':
-			return False
-
-		return True
+		return auto_fix_poll( context, run=True )
 
 	def execute(self, context):
 		from scene_check.validators import base_validator as bv
@@ -564,10 +569,10 @@ class KikiValidatorRunAutoFix(bpy.types.Operator):
 
 		log = bpy.data.texts[ auto_fix_log_name ]
 
-		scene = context.scene
-		result = gc_guard.get( 'result', result_default )
+		scene    = context.scene
+		result   = gc_guard.get( 'result', result_default )
 
-		index = scene.validator_auto_fixes_idx
+		index    = scene.validator_auto_fixes_idx
 		auto_fix = result['auto_fixes'][index]
 
 		## tricksy
@@ -593,6 +598,57 @@ class KikiValidatorRunAutoFix(bpy.types.Operator):
 
 	def invoke(self, context, event):
 		return self.execute( context )
+
+
+## ======================================================================
+class KikiValidatorRunAllAutoFixes( bpy.types.Operator ):
+	"""Attempts to run all auto-fixes, removing the successful ones from the list."""
+	bl_idname = "kiki.validator_run_all_auto_fixes"
+	bl_label = "Validator: Run All Auto Fixes"
+
+	@classmethod
+	def poll(cls, context):
+		return True
+
+	def execute(self, context):
+		from scene_check.validators import base_validator as bv
+		reload(bv)
+		from scene_check.validators.base_validator import get_select_func		
+
+		log = bpy.data.texts[ auto_fix_log_name ]
+
+		scene    = context.scene
+		result   = gc_guard.get( 'result', result_default )
+
+		finished = []
+		for index, auto_fix in enumerate( result['auto_fixes'] ):
+			try:
+				print( auto_fix.auto_fix )
+				exec( auto_fix.auto_fix )
+
+				log.write( repr(auto_fix) )
+				log.write( "\n\n{}\n\n".format(auto_fix.auto_fix) )
+				set_active_text_block( log )
+
+				finished.append(index)
+
+			except Exception as e:
+				report_type = { 'ERROR' }
+				self.report( report_type, 'Unable to run auto-fix (please see error log).' )
+				print( e )
+				log.clear()
+				log.write( str(e) )
+
+		for index in reversed( finished ):
+			result['auto_fixes'].pop( index )
+
+		populate_scene_auto_fix_list()
+
+		return {'FINISHED'}
+
+	def invoke(self, context, event):
+		return self.execute( context )
+
 
 ## ======================================================================
 class KikiValidatorClearAll(bpy.types.Operator):
@@ -666,6 +722,7 @@ class KikiValidatorPanel(bpy.types.Panel):
 					context.scene, "validator_auto_fixes_idx", item_dyntip_propname="description")
 			col.operator( 'kiki.validator_select_auto_fix' )
 			col.operator( 'kiki.validator_run_auto_fix' )
+			col.operator( 'kiki.validator_run_all_auto_fixes' )
 
 
 ## ======================================================================
@@ -680,6 +737,7 @@ module_classes = [
 	KikiValidatorSelectWarning,
 	KikiValidatorSelectAutoFix,
 	KikiValidatorRunAutoFix,
+	KikiValidatorRunAllAutoFixes,
 	KikiValidatorLoad,
 	KikiValidatorSave,
 	KikiValidatorClearAll,
