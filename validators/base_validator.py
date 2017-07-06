@@ -671,9 +671,10 @@ class BaseValidator( object ):
 		self.warnings.append( warning )
 
 	def auto_fix( self, fix, ob=None, subob=None, message=None, type=None, data=None, select_func=None ):
+		raise DeprecationWarning( "Don't use this." )
 
 		if fix is None:
-			raise ValueError('"fix" function must assigned.')
+			raise ValueError('"fix" code must assigned.')
 
 		auto_fix = ValidationMessage( ob, subob, message, parent=self.id(), 
 								 type=type, data=data, error=False, 
@@ -682,7 +683,9 @@ class BaseValidator( object ):
 
 	def auto_fix_last_error( self, fix, message=None ):
 		if fix is None:
-			raise ValueError('"fix" function must assigned.')
+			raise ValueError('"fix" code must assigned.')
+
+		print( "Converting error into auto-fix:\n{}\n\n".format(repr(self.errors[-1])) )
 
 		auto_fix = self.errors[-1].copy()
 		auto_fix.auto_fix = fix
