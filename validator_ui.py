@@ -135,11 +135,14 @@ def clear_scene_error_list():
 	Clears the memory in-scene, wiping all Errors and Warnings.
 	'''
 
-	scene = bpy.context.scene	
+	try:
+		scene = bpy.context.scene	
 
-	for prop in scene.validator_errors, scene.validator_warnings, scene.validator_auto_fixes:
-		prop.clear()
-
+		for prop in scene.validator_errors, scene.validator_warnings, scene.validator_auto_fixes:
+			prop.clear()
+	except:
+		## probably starting up
+		pass
 
 ## ======================================================================
 def populate_scene_auto_fix_list():
@@ -592,12 +595,11 @@ class KikiValidatorRunAutoFix( bpy.types.Operator ):
 			populate_scene_auto_fix_list()
 
 		except Exception as e:
-			print( e.args[0] )
-			report_type = { 'ERROR' }
-			# self.report( report_type, 'Unable to run auto-fix (please see error log).' )
-			print( '-- Unable to run auto-fix (please see error log).' )
-			log.clear()
-			log.write( e.args[0] )
+			error_msg = '-- Unable to run auto-fix (please see error log).'
+			for item in '"""', auto_fix, error_msg, e.args[0], '"""':
+				text = '\n{}\n'.format( item )
+				print( text )
+				log.write( text )
 
 		return {'FINISHED'}
 
@@ -638,12 +640,13 @@ class KikiValidatorRunAllAutoFixes( bpy.types.Operator ):
 				finished.append(index)
 
 			except Exception as e:
-				print( e.args[0] )
-				report_type = { 'ERROR' }
-				# self.report( report_type, 'Unable to run auto-fix (please see error log).' )
-				print( '-- Unable to run auto-fix (please see error log).' )
-				log.clear()
-				log.write( e.args[0] )
+				error_msg = '-- Unable to run auto-fix (please see error log).'
+				
+				for item in '"""', auto_fix, error_msg, e.args[0], '"""':
+					text = '\n{}\n'.format( item )
+					print( text )
+					log.write( text )
+
 
 		for index in reversed( finished ):
 			result['auto_fixes'].pop( index )
@@ -773,7 +776,7 @@ def register():
 ## ======================================================================
 def unregister():
 	for cls in module_classes:
-		bpy.utils.register_class( cls )
+		bpy.utils.unregister_class( cls )
 		try:
 			bpy.utils.unregister_class( cls )
 		except:
