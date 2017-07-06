@@ -22,6 +22,8 @@ from scene_check.validators.base_validator import update_view
 result_default = { 'result': {'errors':[], 'warnings':[], 'auto_fixes':[] } }
 gc_guard = deepcopy( result_default )
 
+auto_fix_log_name = 'auto_fix_log.txt'
+
 
 ## ======================================================================
 def _draw_item(self, context, layout, data, item, icon, active_data, active_propname, index, flt_flag):
@@ -101,6 +103,15 @@ class MESH_UL_ValidatorAutoFixes( bpy.types.UIList ):
 	'''
 	draw_item    = _draw_item
 	filter_items = _filter_items
+
+
+## ======================================================================
+def set_active_text_block( text:bpy.types.Text ):
+	editors = []
+	for area in bpy.context.screen.areas:
+		for space in area.spaces:
+			if space.type == 'TEXT_EDITOR':
+				space.text = text
 
 
 ## ======================================================================
@@ -238,6 +249,10 @@ class KikiValidatorRun(bpy.types.Operator):
 		return {'FINISHED'}
 
 	def invoke(self, context, event):
+		if not auto_fix_log_name in bpy.data.texts:
+			bpy.data.texts.new( auto_fix_log_name )
+		log = bpy.data.texts[ auto_fix_log_name ]
+		log.clear()
 		return self.execute( context )
 
 
@@ -485,7 +500,7 @@ class KikiValidatorSelectAutoFix(bpy.types.Operator):
 		from scene_check.validators.base_validator import get_select_func		
 
 		scene = context.scene
-		result = gc_guard.get( 'result', { 'errors':[], 'warnings':[], 'auto_fixes':[] } )
+		result = gc_guard.get( 'result', result_default )
 
 		try:
 			bpy.ops.object.mode_set( mode='OBJECT' )
@@ -518,6 +533,68 @@ class KikiValidatorSelectAutoFix(bpy.types.Operator):
 
 
 ## ======================================================================
+class KikiValidatorRunAutoFix(bpy.types.Operator):
+	"""Runs the currently-selected automatic fix."""
+	bl_idname = "kiki.validator_run_auto_fix"
+	bl_label = "Validator: Run Auto Fix"
+
+	@classmethod
+	def poll(cls, context):
+		result = gc_guard.get( 'result', result_default )
+		index = context.scene.validator_auto_fixes_idx
+
+		# print( result, index )
+
+		if not len( result['auto_fixes'] ):
+			return False
+		try:
+			auto_fix = result['auto_fixes'][index]
+		except:
+			return False
+
+		if not auto_fix.auto_fix or auto_fix.auto_fix == '':
+			return False
+
+		return True
+
+	def execute(self, context):
+		from scene_check.validators import base_validator as bv
+		reload(bv)
+		from scene_check.validators.base_validator import get_select_func		
+
+		log = bpy.data.texts[ auto_fix_log_name ]
+
+		scene = context.scene
+		result = gc_guard.get( 'result', result_default )
+
+		index = scene.validator_auto_fixes_idx
+		auto_fix = result['auto_fixes'][index]
+
+		## tricksy
+		try:
+			print( auto_fix.auto_fix )
+			exec( auto_fix.auto_fix )
+
+			log.write( repr(auto_fix) )
+			log.write( "\n\n{}\n\n".format(auto_fix.auto_fix) )
+			set_active_text_block( log )
+
+			result['auto_fixes'].pop( index )
+			populate_scene_auto_fix_list()
+
+		except Exception as e:
+			report_type = { 'ERROR' }
+			self.report( report_type, 'Unable to run auto-fix (please see error log).' )
+			print( e )
+			log.clear()
+			log.write( str(e) )
+
+		return {'FINISHED'}
+
+	def invoke(self, context, event):
+		return self.execute( context )
+
+## ======================================================================
 class KikiValidatorClearAll(bpy.types.Operator):
 	"""Clears the Errors and Warnings lists."""
 	bl_idname = "kiki.validator_clear_all"
@@ -529,7 +606,7 @@ class KikiValidatorClearAll(bpy.types.Operator):
 		return True
 
 	def execute(self, context):
-		gc_guard['result'] = { 'errors':[], 'warnings':[], 'auto_fixes':[] }
+		gc_guard['result'] = result_default
 		clear_scene_error_list()
 		return {'FINISHED'}
 
@@ -588,7 +665,7 @@ class KikiValidatorPanel(bpy.types.Panel):
 			col.template_list("MESH_UL_ValidatorAutoFixes", "", context.scene, "validator_auto_fixes", 
 					context.scene, "validator_auto_fixes_idx", item_dyntip_propname="description")
 			col.operator( 'kiki.validator_select_auto_fix' )
-			# col.operator( 'kiki.validator_select_auto_fixes' )
+			col.operator( 'kiki.validator_run_auto_fix' )
 
 
 ## ======================================================================
@@ -602,6 +679,7 @@ module_classes = [
 	KikiValidatorSelectError,
 	KikiValidatorSelectWarning,
 	KikiValidatorSelectAutoFix,
+	KikiValidatorRunAutoFix,
 	KikiValidatorLoad,
 	KikiValidatorSave,
 	KikiValidatorClearAll,

@@ -37,6 +37,12 @@ class GreasePencil(BaseValidator):
 
 			self.pencil_objects.add( item.grease_pencil.name )
 
+		fix_code = (
+			'item = bpy.data.grease_pencil["{}"]\n'
+			'bpy.data.grease_pencil.remove( item )'
+		)
+
+
 		if self.scene.grease_pencil:
 			self.error(
 				ob=self.scene.name,
@@ -49,7 +55,7 @@ class GreasePencil(BaseValidator):
 			self.pencil_objects.add( self.scene.grease_pencil.name )
 
 			self.auto_fix_last_error(
-				fix=partial( self.automatic_fix_hook ),
+				fix=fix_code.format( self.scene.grease_pencil.name ) ,
 				message=( 'Remove loose Scene-level grease pencil data {}.'
 						  .format(self.scene.grease_pencil.name) )
 			)
@@ -67,15 +73,15 @@ class GreasePencil(BaseValidator):
 				)
 
 				self.auto_fix_last_error(
-					fix=partial( self.automatic_fix_hook ), 
+					fix_code.format( item.name ), 
 					message='Remove loose grease pencil data {}.'.format(item.name)
 				)
 
 			self.pencil_objects.add( item.name )
 
-	def automatic_fix_hook( self ):
-		for error in self.errors:
-			gp = bpy.data.grease_pencil[error.subob]
-			bpy.data.grease_pencil.remove( gp )
+	# def automatic_fix_hook( self ):
+	# 	for error in self.errors:
+	# 		gp = bpy.data.grease_pencil[error.subob]
+	# 		bpy.data.grease_pencil.remove( gp )
 
 

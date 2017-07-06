@@ -41,14 +41,19 @@ class ObjectTempGeometry(BaseValidator):
 						.format( item.name )
 				)
 
+				fix_code = (
+					'ob = bpy.data.objects[ "{}" ]\n'
+					'bpy.context.scene.objects.unlink( ob )'
+				).format( item.name )
+
 				self.auto_fix_last_error(
-					partial(self.automatic_fix_hook),
+					fix_code,
 					message='Remove temporary object {}'.format( item.name )
 				)
 
-	def automatic_fix_hook(self):
-		scene = bpy.context.scene
+	# def automatic_fix_hook(self):
+	# 	scene = bpy.context.scene
 
-		for error in self.errors:
-			ob = bpy.data.objects[ error.ob ]
-			bpy.context.scene.objects.unlink( ob )
+	# 	for error in self.errors:
+	# 		ob = bpy.data.objects[ error.ob ]
+	# 		bpy.context.scene.objects.unlink( ob )

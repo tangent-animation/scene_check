@@ -686,7 +686,8 @@ class BaseValidator( object ):
 
 		auto_fix = self.errors[-1].copy()
 		auto_fix.auto_fix = fix
-		auto_fix.message = message if message else auto_fix.message
+		if message:
+			auto_fix.message = message
 		self.auto_fixes.append( auto_fix )
 
 	def get_objects( self, type=None ):
