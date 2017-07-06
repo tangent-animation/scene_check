@@ -1,4 +1,4 @@
-import re
+vimport re
 import os
 import bpy
 

@@ -39,6 +39,8 @@ class RigProtectedLayers( BaseValidator ):
 					)
 				)
 
+		self.processed = True
+
 	# def automatic_fix_hook(self):
 	# 	armatures = self.get_objects( type='ARMATURE' )
 	# 	if not len(armatures):
