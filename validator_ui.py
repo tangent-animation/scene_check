@@ -145,9 +145,8 @@ class SCHEME_UL_ValidatorSchemes( bpy.types.UIList ):
 		self.use_filter_show = True
 
 		if self.layout_type in {'DEFAULT', 'COMPACT'}:
-			split = layout.split(0.4)
+			split = layout.split(0.2)
 			split.prop( item, 'enabled', text="" )
-			split = layout.split(1.0)
 			split.prop( item, "label", text="", emboss=False)
 
 		elif self.layout_type in {'GRID'}:
@@ -315,7 +314,9 @@ def file_load_post_cb( *args ):
 
 ## ======================================================================
 class KikiValidatorRun(bpy.types.Operator):
-	"""Runs all Validators."""
+	"""
+	Runs Validators based on selected Scheme type.
+	"""
 	bl_idname = "kiki.validator_run"
 	bl_label = "Validator: Run"
 
@@ -328,10 +329,26 @@ class KikiValidatorRun(bpy.types.Operator):
 
 	def execute(self, context):
 		from scene_check import validator_factory
-		reload(validator_factory)
+		reload( validator_factory )
 
+		scene = context.scene
+
+		scheme = scene.validator_scheme_type
 		f = validator_factory.ValidatorFactory()
-		gc_guard['result'] = result = f.run_all()
+
+		if not scheme in { 'All','Selected' }:
+			print( '+ Running Scheme "{}"...'.format(scheme) )
+			result = f.run_scheme( scheme )
+		elif scheme == 'Selected':
+			print( '+ Running Selected...' )
+			schemes = [ x.label for x in scene.validator_all if x.enabled ]
+			print( "\t+ Validators: {}".format(str(schemes)) )
+			result = f.run_all( *schemes )
+		else:
+			print( '+ Running All...' )
+			result = f.run_all()
+		
+		gc_guard['result'] = result
 
 		error_count    = len( result['errors'] )
 		warning_count  = len( result['warnings'] )
@@ -362,7 +379,8 @@ class KikiValidatorRun(bpy.types.Operator):
 		log.clear()
 		log.write( 'import bpy\n' )
 
-		populate_scene_validators_list()
+		if not len( context.scene.validator_all ):
+			populate_scene_validators_list()
 
 		return self.execute( context )
 

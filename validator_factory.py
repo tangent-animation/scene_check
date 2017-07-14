@@ -1,6 +1,5 @@
-import imp
+import json, os, sys
 from imp import reload
-import os, sys
 from typing import List, Optional, Union
 
 from scene_check.validators import base_validator
@@ -8,6 +7,7 @@ reload( base_validator )
 from scene_check.validators.base_validator import BaseValidator as bv
 
 import bpy
+
 
 ## ----------------------------------------------------------------------
 class ValidatorFactoryException(Exception):
@@ -83,7 +83,7 @@ class ValidatorFactory(object):
 		return result
 
 	## ----------------------------------------------------------------------
-	def run_scheme( name:str, task_filter:Optional[str]=None, as_json:Optional[bool]=False ):
+	def run_scheme( self, scheme:str, task_filter:Optional[str]=None, as_json:Optional[bool]=False ):
 		"""
 		Tries to run the list of Validators provided by the named Scheme.
 		Schemes are JSON files in the schemes/ folder, specified as lists
@@ -97,7 +97,7 @@ class ValidatorFactory(object):
 		where the string names match file names of Validators in the validators/
 		folder.
 
-		:param name: Name of Scheme to load.
+		:param scheme: Name of Scheme to load.
 		:param task_filter: If specified, filters out the Validators in the Scheme
 							using this string. Default: None
 		:param as_json: If True, returns the results dict in a JSON-compatible format.
@@ -107,7 +107,22 @@ class ValidatorFactory(object):
 					format. Returns None on error.
 		"""
 
+		assert( isinstance(scheme, str) )
+		scheme = scheme.lower()
 
+		if not scheme in self.schemes:
+			raise ValueError( 'Chosen Scheme "{}" does not exist.'.format(scheme) )
+
+		scheme_file_path = os.sep.join([self.scheme_path, scheme+'.scheme'])
+
+		with open( scheme_file_path, 'r' ) as fp:
+			data = json.load( fp )
+
+		## validate the file
+		if not isinstance(data, list) or not all( [isinstance(x, str) for x in data]):
+			raise ValueError( 'Chosen Scheme "{}" is an improperly formatted file ({}).'.format(scheme, scheme_file_path) )
+
+		return self.run_all( *data, task_filter=task_filter, as_json=as_json )
 
 
 	## ----------------------------------------------------------------------
@@ -122,6 +137,8 @@ class ValidatorFactory(object):
 		classes = self.get_class_names( task_filter=task_filter )
 		if len(args):
 			classes = [ x for x in classes if x in args ]
+
+			print( "Classes modifed to {}".format(str(classes)) )
 
 		for name in classes:
 			inst = self.get_class(name)()
