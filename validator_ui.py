@@ -34,12 +34,11 @@ def _draw_item(self, context, layout, data, item, icon, active_data, active_prop
 	self.use_filter_show = True
 
 	if self.layout_type in {'DEFAULT', 'COMPACT'}:
-		split = layout.split(0.2)
+		master_split = layout.split( 0.5)
+		split = master_split.split( 0.5 )
 		split.prop(item, "label", text="", emboss=False)
-		split = split.split(0.25)
 		split.label( item.type )
-		split = split.split(1.0)
-		split.prop(item, "description", text="", emboss=False)
+		master_split.prop(item, "description", text="", emboss=False)
 
 	elif self.layout_type in {'GRID'}:
 		pass
@@ -145,7 +144,7 @@ class SCHEME_UL_ValidatorSchemes( bpy.types.UIList ):
 		self.use_filter_show = True
 
 		if self.layout_type in {'DEFAULT', 'COMPACT'}:
-			split = layout.split(0.2)
+			split = layout.split(0.15)
 			split.prop( item, 'enabled', text="" )
 			split.prop( item, "label", text="", emboss=False)
 
@@ -807,8 +806,7 @@ class KikiValidatorSchemeClearAll(bpy.types.Operator):
 	bl_label = "Validator: Scheme Clear All"
 
 	def invoke(self, context, event):
-		for item in context.scene.validator_all:
-			item.enabled = False
+		populate_scene_validators_list()
 		update_view()
 		return { 'FINISHED' }
 
@@ -832,7 +830,7 @@ class KikiValidatorPanel(bpy.types.Panel):
 	bl_space_type = 'VIEW_3D'
 	bl_region_type = 'TOOLS'
 	bl_category = "AN"
-	bl_label = "Validator"
+	bl_label = "Scene Checker Tools"
 	# bl_context = "scene"
 
 	def draw(self, context):
