@@ -19,10 +19,18 @@ class AssetLibraries(BaseValidator):
 
 	def process_hook( self ):
 		for lib in bpy.data.libraries:
-			if not (lib.filepath and lib.filepath.startswith('//')):
+			if not lib.filepath or not os.path.exists( os.path.abspath(bpy.path.abspath(lib.filepath)) ):
 				self.error(
 					ob=lib.name,
-					type='GENERAL:FILE PATHING',
+					type='GENERAL:INVALID FILE PATH',
+					message=('Path is either not set or broken on Library "{}" ("{}").')
+							 .format( lib.name, lib.filepath )
+				)
+
+			elif not lib.filepath.startswith( '//' ):
+				self.error(
+					ob=lib.name,
+					type='GENERAL:FILE PATHING RELATIVE',
 					message=('Path is absolute. MUST be relative (library "{}").')
 							 .format( lib.filepath )
 				)
@@ -36,8 +44,11 @@ class AssetLibraries(BaseValidator):
 				abspath   = os.path.abspath( bpy.path.abspath(path) )
 				file_root = os.path.dirname( bpy.path.abspath(bpy.data.filepath) )
 				
+				print( "Abspath: {}".format(abspath) )
+				print( "FileRoot: {}".format(file_root) )
+
 				try:
-					relative_path = os.path.relpath( abspath, file_root )
+					relative_path = os.path.relpath( abspath, file_root ).replace('\\','/')
 
 					fix_code = (
 						'import os\n'
