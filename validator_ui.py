@@ -782,6 +782,31 @@ class KikiValidatorClearAll(bpy.types.Operator):
 	def invoke(self, context, event):
 		return self.execute( context )
 
+## ======================================================================
+class KikiValidatorSchemeClearAll(bpy.types.Operator):
+	"""Clears the selection checks for Validators in the Selected Scheme type."""
+	bl_idname = "kiki.validator_scheme_clear_all"
+	bl_label = "Validator: Scheme Clear All"
+
+	def invoke(self, context, event):
+		for item in context.scene.validator_all:
+			item.enabled = False
+		update_view()
+		return { 'FINISHED' }
+
+
+## ======================================================================
+class KikiValidatorSchemeSelectAll(bpy.types.Operator):
+	"""Enabled every Validator in the Selected Scheme type."""
+	bl_idname = "kiki.validator_scheme_select_all"
+	bl_label = "Validator: Scheme Select All"
+
+	def invoke(self, context, event):
+		for item in context.scene.validator_all:
+			item.enabled = True
+		update_view()
+		return { 'FINISHED' }
+
 
 ## ======================================================================
 class KikiValidatorPanel(bpy.types.Panel):
@@ -803,16 +828,26 @@ class KikiValidatorPanel(bpy.types.Panel):
 		layout.prop( scene, 'validator_scheme_type', text='Scheme Type' )
 
 		if scene.validator_scheme_type == 'Selected':
-			layout.template_list( 'SCHEME_UL_ValidatorSchemes', "", context.scene, "validator_all",
-								context.scene, "validator_all_idx" )
+			layout.template_list( 'SCHEME_UL_ValidatorSchemes', "", scene, "validator_all",
+								scene, "validator_all_idx" )
 
+			split = layout.split( 0.5)
+			split.operator( 'kiki.validator_scheme_select_all', text="Select All", icon='GHOST_ENABLED' )
+			split.operator( 'kiki.validator_scheme_clear_all',  text="Clear All",  icon='GHOST_DISABLED' )
 
-		layout.operator( 'kiki.validator_run' )
-		layout.operator( 'kiki.validator_clear_all' )
+			selected = sum( [1 for x in scene.validator_all if x.enabled] )
+			row = layout.row()
+			row.alignment = 'CENTER'
+			row.label( '{} Validator{} selected.'.format(selected, '' if selected == 1 else 's') )
+
+			layout.separator()
+
+		layout.operator( 'kiki.validator_run', icon='LOGIC' )
+		layout.operator( 'kiki.validator_clear_all', icon='X' )
 
 		split = layout.split( 0.5 )
-		split.operator( 'kiki.validator_load' )
-		split.operator( 'kiki.validator_save' )
+		split.operator( 'kiki.validator_load', icon='LIBRARY_DATA_DIRECT' )
+		split.operator( 'kiki.validator_save', icon='DISK_DRIVE' )
 
 		if not (error_count + warning_count):
 			layout.label( "No errors or warnings found." )
@@ -863,6 +898,8 @@ module_classes = [
 	KikiValidatorLoad,
 	KikiValidatorSave,
 	KikiValidatorClearAll,
+	KikiValidatorSchemeClearAll,
+	KikiValidatorSchemeSelectAll,
 ]
 
 def register():
