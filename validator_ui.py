@@ -756,11 +756,11 @@ def register():
 	for cls in module_classes:
 		bpy.utils.register_class( cls )
 
-	bpy.types.Scene.validator_errors       = bpy.props.CollectionProperty( type=ValidatorList, options={'SKIP_SAVE'} )
-	bpy.types.Scene.validator_errors_idx   = bpy.props.IntProperty( default=0, min=0 )
+	bpy.types.Scene.validator_errors         = bpy.props.CollectionProperty( type=ValidatorList, options={'SKIP_SAVE'} )
+	bpy.types.Scene.validator_errors_idx     = bpy.props.IntProperty( default=0, min=0 )
 
-	bpy.types.Scene.validator_warnings     = bpy.props.CollectionProperty( type=ValidatorList, options={'SKIP_SAVE'} )
-	bpy.types.Scene.validator_warnings_idx = bpy.props.IntProperty( default=0, min=0 )
+	bpy.types.Scene.validator_warnings       = bpy.props.CollectionProperty( type=ValidatorList, options={'SKIP_SAVE'} )
+	bpy.types.Scene.validator_warnings_idx   = bpy.props.IntProperty( default=0, min=0 )
 
 	bpy.types.Scene.validator_auto_fixes     = bpy.props.CollectionProperty( type=ValidatorList, options={'SKIP_SAVE'} )
 	bpy.types.Scene.validator_auto_fixes_idx = bpy.props.IntProperty( default=0, min=0 )
@@ -773,16 +773,14 @@ def register():
 	if not file_load_post_cb in bpy.app.handlers.load_post:
 		bpy.app.handlers.load_post.append( file_load_post_cb )
 
+
 ## ======================================================================
 def unregister():
 	for cls in module_classes:
-		bpy.utils.unregister_class( cls )
 		try:
 			bpy.utils.unregister_class( cls )
 		except:
 			pass
-
-	scene = bpy.types.Scene
 
 	for prop in [ 'validator_errors', 'validator_errors_idx', 
 			'validator_warnings', 'validator_warnings_idx',
@@ -790,7 +788,7 @@ def unregister():
 			 ]:
 		locals_dict = locals()
 		try:
-			exec( 'del scene.{}'.format(prop), globals(), locals_dict ) 
+			exec( 'del bpy.types.Scene.{}'.format(prop), globals(), locals_dict ) 
 		except:
 			pass
 
@@ -804,5 +802,5 @@ def unregister():
 if __name__ == "__main__":
 	unregister()
 	register()
-	print("Test registered.")
+	print("Scene Check registered.")
 
