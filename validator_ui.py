@@ -207,7 +207,7 @@ def generate_schemes_list():
 	Generates the information for the Schemes enum.
 	"""
 	from scene_check.validator_factory import ValidatorFactory
-	vf = ValidatorFactory()
+	vf = ValidatorFactory( clear=False )
 
 	result = [
 		('All','All','Run all Validators', 0),
@@ -290,10 +290,14 @@ def populate_scene_validators_list():
 	Scheme run type.
 	"""
 
-	scene = bpy.context.scene
+	## fix for first launch after register
+	try:
+		scene = bpy.context.scene
+	except:
+		return
 
 	from scene_check.validator_factory import ValidatorFactory
-	vf = ValidatorFactory()
+	vf = ValidatorFactory( clear=False )
 
 	scene.validator_all.clear()
 
