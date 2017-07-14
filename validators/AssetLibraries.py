@@ -27,3 +27,33 @@ class AssetLibraries(BaseValidator):
 							 .format( lib.filepath )
 				)
 
+				## the fix here is very specific to the show
+				## need to change this path if it's a different show.
+
+				base_path     = 'T:/Projects/0053_7723/'
+			
+				path      = lib.filepath
+				abspath   = os.path.abspath( bpy.path.abspath(path) )
+				file_root = os.path.dirname( bpy.path.abspath(bpy.data.filepath) )
+				
+				try:
+					relative_path = os.path.relpath( abspath, file_root )
+
+					fix_code = (
+						'import os\n'
+						'lib  = bpy.data.libraries["{}"]\n'
+						'path = "{}"\n'
+						'lib.filepath = "//" + path\n'
+						.format( lib.name, relative_path )
+					)
+
+					self.auto_fix_last_error(
+						fix=fix_code,
+						message=(
+							'Change library "{}" to use a relative path.'
+							.format(lib.name)
+						)	
+					)
+				except:
+					print( '-- File "{}" could not be made relative-- different drives.'.format(lib.filepath) )
+

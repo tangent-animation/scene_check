@@ -32,10 +32,20 @@ class AssetFile(BaseValidator):
 						 "in User Preferences.")
 			)
 
+			self.auto_fix_last_error(
+				fix='bpy.context.user_preferences.filepaths.use_scripts_auto_execute = True\n',
+				message=('Enable script auto-execution.')
+			)
+
 		if ( bp.filepaths.use_relative_paths == False ):
 			self.error(	type='GENERAL:PREFS RELATIVE',
 				message=("Relative Paths is turned OFF. Relative "
 						"Paths must be turned ON in User Preferences")
+			)
+
+			self.auto_fix_last_error(
+				fix='bpy.context.user_preferences.filepaths.use_relative_paths = True\n',
+				message=('Enable relative paths.')
 			)
 
 		if ( bd.use_autopack ):
@@ -51,6 +61,11 @@ class AssetFile(BaseValidator):
 						"turned OFF for asset publishing.")
 			)
 	
+			self.auto_fix_last_error(
+				fix='bpy.context.scene.render.use_simplify = False\n',
+				message=('Turn off Render Simplify.')
+			)
+
 		render_layer_count = len( bc.scene.render.layers )
 		if render_layer_count > 1:
 			self.error(	type='GENERAL:RENDER LAYERS',
@@ -104,3 +119,7 @@ class AssetFile(BaseValidator):
 						 .format(system_units)
 			)
 
+			self.auto_fix_last_error(
+				fix='bpy.context.scene.unit_settings.system = "METRIC"\n',
+				message=('Set scene units to Metric.')
+			)

@@ -34,8 +34,8 @@ def _draw_item(self, context, layout, data, item, icon, active_data, active_prop
 	self.use_filter_show = True
 
 	if self.layout_type in {'DEFAULT', 'COMPACT'}:
-		master_split = layout.split( 0.5)
-		split = master_split.split( 0.5 )
+		master_split = layout.split( 0.4)
+		split = master_split.split( 0.3 )
 		split.prop(item, "label", text="", emboss=False)
 		split.label( item.type )
 		master_split.prop(item, "description", text="", emboss=False)
