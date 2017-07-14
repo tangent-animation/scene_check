@@ -106,6 +106,54 @@ class MESH_UL_ValidatorAutoFixes( bpy.types.UIList ):
 
 
 ## ======================================================================
+class SCHEME_UL_ValidatorSchemes( bpy.types.UIList ):
+	"""
+
+	"""
+	def filter_items(self, context, data, propname):
+		'''
+		Called once to filter/reorder items.
+		'''
+
+		column = getattr(data, propname)
+		filter_name = self.filter_name.lower()
+
+		flt_flags = [self.bitflag_filter_item if any(
+				filter_name in filter_set for filter_set in ( str(i), item.label.lower() )
+			)
+			else 0 for i, item in enumerate(column, 1)
+		]
+
+		if self.use_filter_sort_alpha:
+			flt_neworder = [x[1] for x in sorted(
+					zip(
+						[x[0] for x in sorted(enumerate(column), key=lambda x: x[1].label)],
+						range(len(column))
+					)
+				)
+			]
+		else:
+			flt_neworder = []
+
+		return flt_flags, flt_neworder
+
+	def draw_item(self, context, layout, data, item, icon, active_data, active_propname, index, flt_flag):
+		'''
+		Custom draw function for the custom UIList display class.
+		'''
+
+		self.use_filter_show = True
+
+		if self.layout_type in {'DEFAULT', 'COMPACT'}:
+			split = layout.split(0.4)
+			split.prop( item, 'enabled', text="" )
+			split = layout.split(1.0)
+			split.prop( item, "label", text="", emboss=False)
+
+		elif self.layout_type in {'GRID'}:
+			pass	
+
+## ======================================================================
 def set_active_text_block( text:bpy.types.Text ):
 	editors = []
 	for area in bpy.context.screen.areas:
@@ -115,6 +163,17 @@ def set_active_text_block( text:bpy.types.Text ):
 				space.show_line_numbers     = True
 				space.show_word_wrap        = True
 				space.show_syntax_highlight = True
+
+
+## ======================================================================
+class SchemeValidatorList( bpy.types.PropertyGroup ):
+	"""
+	In-scene storage for the Validators when using Select mode 
+	for the Scheme type.
+	"""
+
+	enabled = bpy.props.BoolProperty()
+	label   = bpy.props.StringProperty()
 
 
 ## ======================================================================
@@ -143,6 +202,28 @@ def clear_scene_error_list():
 	except:
 		## probably starting up
 		pass
+
+## ======================================================================
+def generate_schemes_list():
+	"""
+	Generates the information for the Schemes enum.
+	"""
+	from scene_check.validator_factory import ValidatorFactory
+	vf = ValidatorFactory()
+
+	result = [
+		('All','All','Run all Validators', 0),
+		('Selected','Selected', 'Run Validators from selection list', 1)
+	]
+
+	for index, scheme in enumerate(vf.schemes):
+		scheme = scheme[0].upper() + scheme[1:]
+		result.append(
+			(scheme, scheme, 'Run scheme {}.'.format(scheme), index+2)
+		)
+
+	return result
+
 
 ## ======================================================================
 def populate_scene_auto_fix_list():
@@ -205,6 +286,26 @@ def populate_scene_error_list():
 
 
 ## ======================================================================
+def populate_scene_validators_list():
+	"""
+	Populates the scene Validators list for when using the Selected
+	Scheme run type.
+	"""
+
+	scene = bpy.context.scene
+
+	from scene_check.validator_factory import ValidatorFactory
+	vf = ValidatorFactory()
+
+	scene.validator_all.clear()
+
+	for item in vf.modules:
+		validator = scene.validator_all.add()
+		validator.enabled = False
+		validator.label   = item  
+
+
+## ======================================================================
 @persistent
 def file_load_post_cb( *args ):
 	print("+ ValidatorUI: File Load Callback.")
@@ -260,6 +361,9 @@ class KikiValidatorRun(bpy.types.Operator):
 		log = bpy.data.texts[ auto_fix_log_name ]
 		log.clear()
 		log.write( 'import bpy\n' )
+
+		populate_scene_validators_list()
+
 		return self.execute( context )
 
 
@@ -696,6 +800,13 @@ class KikiValidatorPanel(bpy.types.Panel):
 		warning_count  = len( scene.validator_warnings )
 		auto_fix_count = len( scene.validator_auto_fixes )
 
+		layout.prop( scene, 'validator_scheme_type', text='Scheme Type' )
+
+		if scene.validator_scheme_type == 'Selected':
+			layout.template_list( 'SCHEME_UL_ValidatorSchemes', "", context.scene, "validator_all",
+								context.scene, "validator_all_idx" )
+
+
 		layout.operator( 'kiki.validator_run' )
 		layout.operator( 'kiki.validator_clear_all' )
 
@@ -736,11 +847,13 @@ class KikiValidatorPanel(bpy.types.Panel):
 
 ## ======================================================================
 module_classes = [
-	MESH_UL_ValidatorErrors, 
-	MESH_UL_ValidatorWarnings, 
-	MESH_UL_ValidatorAutoFixes, 
-	ValidatorList, 
-	KikiValidatorPanel, 
+	MESH_UL_ValidatorErrors,
+	MESH_UL_ValidatorWarnings,
+	MESH_UL_ValidatorAutoFixes,
+	SCHEME_UL_ValidatorSchemes,
+	ValidatorList,
+	SchemeValidatorList,
+	KikiValidatorPanel,
 	KikiValidatorRun,
 	KikiValidatorSelectError,
 	KikiValidatorSelectWarning,
@@ -765,7 +878,18 @@ def register():
 	bpy.types.Scene.validator_auto_fixes     = bpy.props.CollectionProperty( type=ValidatorList, options={'SKIP_SAVE'} )
 	bpy.types.Scene.validator_auto_fixes_idx = bpy.props.IntProperty( default=0, min=0 )
 
+	bpy.types.Scene.validator_scheme_type = bpy.props.EnumProperty(
+		items=generate_schemes_list(),
+		description="Validator Scheme to run.",
+		default='All'
+	)
+
+	bpy.types.Scene.validator_all = bpy.props.CollectionProperty( type=SchemeValidatorList,
+																options={'SKIP_SAVE'} )
+	bpy.types.Scene.validator_all_idx = bpy.props.IntProperty( default=0, min=0 )
+
 	clear_scene_error_list()
+	populate_scene_validators_list()
 
 	## new feature: file load handler
 	## remove the information on file load so the UI isn't broken
@@ -785,8 +909,9 @@ def unregister():
 	for prop in [ 'validator_errors', 'validator_errors_idx', 
 			'validator_warnings', 'validator_warnings_idx',
 			'validator_auto_fixes', 'validator_auto_fixes_idx',
-			 ]:
-		locals_dict = locals()
+			'validator_scheme_type', 'validator_all',
+			]:
+		locals_dict =  locals()
 		try:
 			exec( 'del bpy.types.Scene.{}'.format(prop), globals(), locals_dict ) 
 		except:

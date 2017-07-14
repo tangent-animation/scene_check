@@ -17,10 +17,17 @@ class ValidatorFactoryException(Exception):
 ## ----------------------------------------------------------------------
 class ValidatorFactory(object):
 	def __init__(self, clear=True):
-		self.modulePath = os.sep.join( [__file__.rpartition( os.sep )[0], 'validators'] )
-		self.modules = [ x.partition('.')[0] for x in os.listdir(self.modulePath) if x.endswith('.py') 
+		self.module_path = os.sep.join( [__file__.rpartition( os.sep )[0], 'validators'] )
+		self.modules = [ x.partition('.')[0] for x in os.listdir(self.module_path) if x.endswith('.py') 
 					and not x.count('__init') 
 					and not x.count('base_validator') ]
+
+		self.scheme_path = os.sep.join( [__file__.rpartition( os.sep )[0], 'schemes'] )
+		self.schemes = [ x.partition('.')[0].lower() for x in os.listdir(self.scheme_path) if x.endswith('.scheme') ]
+
+		# print("Valid Schemes:")
+		# for scheme in self.schemes:
+		# 	print( "\t+ {}".format(scheme) )
 
 		if clear:
 			self.clear_log()
@@ -74,6 +81,34 @@ class ValidatorFactory(object):
 		else:
 			raise ValueError( "get_class_names: task_filter must be a string, a list of strings, or None." )
 		return result
+
+	## ----------------------------------------------------------------------
+	def run_scheme( name:str, task_filter:Optional[str]=None, as_json:Optional[bool]=False ):
+		"""
+		Tries to run the list of Validators provided by the named Scheme.
+		Schemes are JSON files in the schemes/ folder, specified as lists
+		of strings:
+
+		[
+			'ThisValidator',
+			'SomeOtherValidator'
+		]
+
+		where the string names match file names of Validators in the validators/
+		folder.
+
+		:param name: Name of Scheme to load.
+		:param task_filter: If specified, filters out the Validators in the Scheme
+							using this string. Default: None
+		:param as_json: If True, returns the results dict in a JSON-compatible format.
+						Default: False
+		:returns: 	The results dict of ValidationMessage classes for the errors, warnings,
+					and auto-fixes. If as_json is True, the dict will be in a JSON-compatible
+					format. Returns None on error.
+		"""
+
+
+
 
 	## ----------------------------------------------------------------------
 	def run_all( self, *args, task_filter=None, as_json=False ):
