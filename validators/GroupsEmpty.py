@@ -25,7 +25,7 @@ class GroupsEmpty( BaseValidator ):
 		for group in bpy.data.groups:
 			result = 0
 			for ob in group.objects:
-				if ob in scene.objects:
+				if ob.name in scene.objects:
 					result += 1
 
 			if result == 0:
