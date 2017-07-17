@@ -5,6 +5,11 @@ import bpy
 from scene_check.validators.base_validator import BaseValidator
 
 class RigMeshDeformGroups(BaseValidator):
+	"""
+	* Checks to make sure that no vertex groups
+	exist in meshes for non-deforming bones.
+	"""
+
 	def __init__(self):
 		super(RigMeshDeformGroups, self).__init__()
 

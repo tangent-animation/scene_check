@@ -11,7 +11,7 @@ bp = bpy.context.user_preferences
 
 class SceneConstraints(BaseValidator):
 	'''
-	* Checks for presence of scene-level constraints empty
+	* Checks for presence of scene-level constraints empty object
 	* Makes sure all constraint armatures are living under a scene-level empty
 	'''
 

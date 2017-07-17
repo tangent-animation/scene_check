@@ -4,6 +4,8 @@ from scene_check.validators.base_validator import BaseValidator
 
 class RigBoneTransform(BaseValidator):
 	'''
+	* Makes sure god nodes are at 0,0,0 and fixes
+	their rotate orders.
 	'''
 
 	automatic_fix = True

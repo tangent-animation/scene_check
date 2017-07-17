@@ -10,10 +10,10 @@ bp = bpy.context.user_preferences
 
 
 class SurfacingUVs(BaseValidator):
-	'''
-	Checks to make sure that each mesh
-	has UVs, and that it 	
-	'''
+	"""
+	* Checks to make sure that each mesh
+	has UVs, and that they are properly named.
+	"""
 
 	def __init__(self):
 		super(SurfacingUVs, self).__init__()

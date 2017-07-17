@@ -5,6 +5,11 @@ import bpy
 from scene_check.validators.base_validator import BaseValidator
 
 class RigProtectedLayers( BaseValidator ):
+	"""
+	* Checks that all protected layers are 
+	properly set.
+	"""
+
 	automatic_fix = True
 
 	def __init__(self):

@@ -5,6 +5,10 @@ import bpy
 from scene_check.validators.base_validator import BaseValidator
 
 class RigCharacterMeshLocks(BaseValidator):
+	"""
+	* Makes sure that meshes under armatures are
+	properly locked.
+	"""
 	automatic_fix = True
 
 	def __init__(self):

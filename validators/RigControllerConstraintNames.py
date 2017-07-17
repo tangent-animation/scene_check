@@ -5,6 +5,11 @@ import bpy
 from scene_check.validators.base_validator import BaseValidator
 
 class RigControllerConstraintNames(BaseValidator):
+	"""
+	* Makes sure constraints on controllers are prefixed
+	with DO_NOT_TOUCH.
+	"""
+
 	def __init__(self):
 		super(RigControllerConstraintNames, self).__init__()
 

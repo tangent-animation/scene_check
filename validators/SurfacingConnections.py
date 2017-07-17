@@ -10,9 +10,10 @@ bp = bpy.context.user_preferences
 
 
 class SurfacingConnections( BaseValidator ):
-	'''
-	Checks that 
-	'''
+	"""
+	* Checks that Shader-type outputs are 
+	connected to Shader-type inputs.
+	"""
 
 	def __init__(self):
 		super(SurfacingConnections, self).__init__()

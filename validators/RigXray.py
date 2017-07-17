@@ -5,6 +5,10 @@ import bpy
 from scene_check.validators.base_validator import BaseValidator
 
 class RigXray( BaseValidator ):
+	"""
+	* Checks that the Armature is not in XRay mode.
+	"""
+
 	automatic_fix = True
 
 	def __init__(self):

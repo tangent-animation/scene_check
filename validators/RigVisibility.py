@@ -5,6 +5,11 @@ import bpy
 from scene_check.validators.base_validator import BaseValidator
 
 class RigVisibility(BaseValidator):
+	"""
+	* Checks for non-control bones that 
+	should be hidden.
+	"""
+
 	automatic_fix = True
 
 	def __init__(self):

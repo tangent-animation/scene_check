@@ -3,6 +3,11 @@ import bpy
 from scene_check.validators.base_validator import BaseValidator
 
 class RigShapeLocking(BaseValidator):
+	"""
+	* Looks for all meshes used as controller shapes
+	and checks that they are properly locked.
+	"""
+
 	automatic_fix = True
 
 	def __init__(self):

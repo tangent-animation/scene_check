@@ -10,10 +10,10 @@ bp = bpy.context.user_preferences
 
 
 class SurfacingMaterials(BaseValidator):
-	'''
-	Checks to make sure that each mesh
+	"""
+	* Checks to make sure that each mesh
 	has at least one Material.
-	'''
+	"""
 
 	def __init__(self):
 		super(SurfacingMaterials, self).__init__()

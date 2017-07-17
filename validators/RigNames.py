@@ -5,6 +5,11 @@ import bpy
 from scene_check.validators.base_validator import BaseValidator
 
 class RigNames(BaseValidator):
+	"""
+	* Makes sure that Armature names conform
+	to show standards.
+	"""
+
 	def __init__(self):
 		super(RigNames, self).__init__()
 

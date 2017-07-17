@@ -4,6 +4,10 @@ import bpy
 from scene_check.validators.base_validator import BaseValidator
 
 class ScreenPurgeLayouts(BaseValidator):
+	"""
+	* Checks for excess layouts in the Blender file.
+	"""
+
 	automatic_fix = True
 
 	def __init__(self):

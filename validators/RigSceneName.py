@@ -4,6 +4,11 @@ import bpy
 from scene_check.validators.base_validator import BaseValidator
 
 class RigSceneName(BaseValidator):
+	"""
+	* Makes sure that the file's scene name matches
+	the name of the rig.
+	"""
+
 	def __init__(self):
 		super(RigSceneName, self).__init__()
 

@@ -5,6 +5,11 @@ import bpy
 from scene_check.validators.base_validator import BaseValidator
 
 class RigGroups(BaseValidator):
+	"""
+	* Makes sure objects in a rig are properly
+	grouped for linking.
+	"""
+
 	def __init__(self):
 		super(RigGroups, self).__init__()
 
