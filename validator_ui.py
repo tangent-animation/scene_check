@@ -25,6 +25,21 @@ gc_guard = deepcopy( result_default )
 auto_fix_log_name = 'auto_fix_log.txt'
 
 ## ======================================================================
+def get_log():
+	"""
+	Gets a pointer to the log Text block, creating it if it doesn't 
+	already exist.
+	:returns: The log Text block.
+	"""
+
+	if not auto_fix_log_name in bpy.data.texts:
+		log = bpy.data.texts.new( auto_fix_log_name )
+		log.write( 'import bpy\n\n' )
+	log = bpy.data.texts[ auto_fix_log_name ]
+	return log
+
+
+## ======================================================================
 def _draw_item(self, context, layout, data, item, icon, active_data, active_propname, index, flt_flag):
 	'''
 	Custom draw function for the custom UIList display classes.
@@ -375,9 +390,7 @@ class KikiValidatorRun(bpy.types.Operator):
 		return {'FINISHED'}
 
 	def invoke(self, context, event):
-		if not auto_fix_log_name in bpy.data.texts:
-			bpy.data.texts.new( auto_fix_log_name )
-		log = bpy.data.texts[ auto_fix_log_name ]
+		log = get_log()
 		log.clear()
 		log.write( 'import bpy\n' )
 
@@ -698,7 +711,7 @@ class KikiValidatorRunAutoFix( bpy.types.Operator ):
 		reload(bv)
 		from scene_check.validators.base_validator import get_select_func		
 
-		log = bpy.data.texts[ auto_fix_log_name ]
+		log = get_log()
 
 		scene    = context.scene
 		result   = gc_guard.get( 'result', result_default )
@@ -746,7 +759,7 @@ class KikiValidatorRunAllAutoFixes( bpy.types.Operator ):
 		reload(bv)
 		from scene_check.validators.base_validator import get_select_func		
 
-		log = bpy.data.texts[ auto_fix_log_name ]
+		log = get_log()
 
 		scene    = context.scene
 		result   = gc_guard.get( 'result', result_default )
