@@ -24,7 +24,6 @@ gc_guard = deepcopy( result_default )
 
 auto_fix_log_name = 'auto_fix_log.txt'
 
-
 ## ======================================================================
 def _draw_item(self, context, layout, data, item, icon, active_data, active_propname, index, flt_flag):
 	'''
@@ -935,10 +934,12 @@ def register():
 	bpy.types.Scene.validator_auto_fixes     = bpy.props.CollectionProperty( type=ValidatorList, options={'SKIP_SAVE'} )
 	bpy.types.Scene.validator_auto_fixes_idx = bpy.props.IntProperty( default=0, min=0 )
 
+	schemes = generate_schemes_list()
+
 	bpy.types.Scene.validator_scheme_type = bpy.props.EnumProperty(
-		items=generate_schemes_list(),
-		description="Validator Scheme to run.",
-		default='All'
+		items=schemes,
+		name="test",
+		description="Validator Scheme to run."
 	)
 
 	bpy.types.Scene.validator_all = bpy.props.CollectionProperty( type=SchemeValidatorList,
