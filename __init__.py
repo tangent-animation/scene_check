@@ -4,7 +4,7 @@ import bpy
 bl_info = {
     "name": "Kiki's Scene Check",
     "author": "kiki",
-    "version": (0, 2, 2),
+    "version": (0, 2, 3),
     "blender": (2, 78),
     "location": "Everywhere!",
     "description": "Asset Validation Tools",
@@ -16,7 +16,6 @@ bl_info = {
 
 def register():
 	from . import validator_ui
-	reload( validator_ui )
 	return validator_ui.register()
 
 def unregister():

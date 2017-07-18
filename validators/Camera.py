@@ -15,7 +15,6 @@ class Camera(BaseValidator):
 	* Makes sure camera is parented under a rig
 	* Makes sure camera rig is properly named.
 	* Makes sure camera rig is locked.
-	* Makes sure the camera rig has a DOF object.
 	'''
 
 	camera_name_regex = re.compile( r"cam\.([0-9]{3})_([0-9]{4})_(t01)" )
