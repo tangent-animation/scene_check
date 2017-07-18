@@ -322,11 +322,26 @@ def populate_scene_validators_list():
 
 
 ## ======================================================================
+def validator_scheme_type_cb( self, context ):
+	"""
+	Trying to still fix the bug where the selected list is 
+	not populated at startup.
+	"""
+	try:
+		if ( context.scene.validator_scheme_type == 'Selected' and 
+				not len( context.scene.validator_all ) > 0 ):
+			print( "Populating Scheme types list..." )
+			populate_scene_validators_list()
+	except:
+		pass
+
+## ======================================================================
 @persistent
 def file_load_post_cb( *args ):
 	print("+ ValidatorUI: File Load Callback.")
 	clear_scene_error_list()
 	gc_guard = deepcopy( result_default )
+	populate_scene_validators_list()
 
 
 ## ======================================================================
@@ -952,7 +967,8 @@ def register():
 	bpy.types.Scene.validator_scheme_type = bpy.props.EnumProperty(
 		items=schemes,
 		name="test",
-		description="Validator Scheme to run."
+		description="Validator Scheme to run.",
+		update=validator_scheme_type_cb
 	)
 
 	bpy.types.Scene.validator_all = bpy.props.CollectionProperty( type=SchemeValidatorList,
