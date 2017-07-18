@@ -39,18 +39,18 @@ class Camera(BaseValidator):
 					message=( 'Camera "{}" name does not match show standard.'
 							.format(name) )
 				)
+
+			parent = camera.parent
+			if not parent or not parent.type == 'ARMATURE':
+				self.error(
+					ob=name,
+					select_func='object',
+					type='CAMERA:PARENT',
+					message=( 'Camera "{}" is not under a proper rig parent.'
+							.format(name) )
+				)
 			else:
-				parent = camera.parent
-				if not parent or not parent.type == 'ARMATURE':
-					self.error(
-						ob=name,
-						select_func='object',
-						type='CAMERA:PARENT',
-						message=( 'Camera "{}" is not under a proper rig parent.'
-								.format(name) )
-					)
-				else:
-					cameras.append( name )
+				cameras.append( name )
 		
 		for cam in cameras:
 			camera   = bpy.data.objects[ cam ]
@@ -84,6 +84,44 @@ class Camera(BaseValidator):
 					fix_code,
 					message='Rename data on Camera Armature "{}".'.format( armature.name )
 				)
+
+			if not camera.hide_select:
+				self.error(
+					ob=camera.name,
+					select_func='object',
+					type='CAMERA:CAMERA SELECTABLE',
+					message=( 'Camera "{}" is still selectable.'
+							.format(camera.name) )
+				)
+			
+				fix_code = (
+					'camera = bpy.data.objects["{}"]\n'
+					'camera.hide_select = True'
+				).format( camera.name )
+			
+				self.auto_fix_last_error(
+					fix_code,
+					message='Disable Pickability on Camera "{}".'.format( camera.name )
+				)				
+
+			if not armature.hide_select:
+				self.error(
+					ob=armature.name,
+					select_func='object',
+					type='CAMERA:ARMATURE SELECTABLE',
+					message=( 'Camera Armature "{}" is still selectable.'
+							.format(armature.name) )
+				)
+			
+				fix_code = (
+					'armature = bpy.data.objects["{}"]\n'
+					'armature.hide_select = True'
+				).format( armature.name )
+			
+				self.auto_fix_last_error(
+					fix_code,
+					message='Disable Pickability on Camera Armature "{}".'.format( armature.name )
+				)				
 
 			total_unlocked_bones = 0
 			for bone in [ x for x in armature.pose.bones if x.name.startswith('ctl.') ]:
