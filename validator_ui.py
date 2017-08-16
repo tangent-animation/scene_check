@@ -860,7 +860,7 @@ class KikiValidatorPanel(bpy.types.Panel):
 	"""Creates a Panel in the Object properties window"""
 	bl_space_type = 'VIEW_3D'
 	bl_region_type = 'TOOLS'
-	bl_category = "AN"
+	bl_category = "Kiki Tools"
 	bl_label = "Scene Checker Tools"
 	# bl_context = "scene"
 
