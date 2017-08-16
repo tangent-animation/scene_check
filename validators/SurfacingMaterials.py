@@ -11,8 +11,11 @@ bp = bpy.context.user_preferences
 
 class SurfacingMaterials(BaseValidator):
 	"""
-	* Checks to make sure that each mesh
-	has at least one Material.
+	* Checks to make sure that each mesh has at least one Material.
+	* Checks for textures with disconnected UV inputs.
+	* Checks for counts of group shaders and errors if there are too many
+	* Checks for shader networks that contain too many nodes.
+	* Checks that all materials have a pass index greater than zero.
 	"""
 
 	def __init__(self):
@@ -46,12 +49,22 @@ class SurfacingMaterials(BaseValidator):
 									.format( material.name, item.name )
 						)
 
+				if material.pass_index == 0:
+					self.error(
+						ob=item.name,
+						select_func='materials',
+						subob=material.name,
+						type='SURFACE:MATERIAL - PASS INDEX',
+						message=('Material "{}" on Mesh "{}" has a pass index of zero.')
+								.format( material.name, item.name )
+					)
+
 				nodes = material.node_tree.nodes if material.use_nodes else []
 				node_count = len(nodes)
 				links = material.node_tree.links if material.use_nodes else []
 
 				##!FIXME: This seems strange and arbitrary
-				if node_count > 15:
+				if node_count > 25:
 					self.warning(
 						ob=item.name,
 						subob=material.name,
