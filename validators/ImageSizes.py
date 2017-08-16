@@ -9,6 +9,7 @@ class ImageSizes(BaseValidator):
 	* Make sure textures don't exceed 4096x4096 pixels
 	* Make sure that the image isn't more than 8bpp
 	* Warns if the texture is not square
+	* Warns if texture size is not a power of two.
 	'''
 
 	def __init__(self):
@@ -19,7 +20,8 @@ class ImageSizes(BaseValidator):
 
 		unique_paths = {}
 
-		MAX_SIZE = 4096
+		MAX_SIZE     = 4096
+		POWER2_SIZES = [ 2**x for x in range(14) ]
 
 		for image in bpy.data.images:
 			if image.size[0] > MAX_SIZE or image.size[1] > MAX_SIZE:
@@ -41,6 +43,18 @@ class ImageSizes(BaseValidator):
 					select_func='image',
 					type='IMAGE:SIZE - NON-SQUARE',
 					message=( 'Image {name} not square (currently {sizeA}x{sizeB} pixels).' )
+					.format(
+						name=image.name,
+						sizeA=image.size[0],
+						sizeB=image.size[1],
+					)
+				)
+
+			if not image.size[0] in POWER2_SIZES or not image.size[1] in POWER2_SIZES:
+				self.warning( ob=image.name,
+					select_func='image',
+					type='IMAGE:SIZE - NON-POWER OF TWO',
+					message=( 'Image {name} size not a power of two (currently {sizeA}x{sizeB} pixels).' )
 					.format(
 						name=image.name,
 						sizeA=image.size[0],
