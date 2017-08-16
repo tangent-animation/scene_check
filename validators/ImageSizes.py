@@ -1,5 +1,6 @@
 import os
 import re
+from math import floor
 import bpy
 
 from scene_check.validators.base_validator import BaseValidator
@@ -15,13 +16,17 @@ class ImageSizes(BaseValidator):
 	def __init__(self):
 		super(ImageSizes, self).__init__()
 
+	def file_size( self, file_name ):
+		return os.stat( bpy.path.abspath(file_name) ).st_size
+
 	def process_hook( self ):
 		regex = re.compile( r"(img)\.([A-Za-z\_]+)\.(v[0-9]{4})\.(png)" )
 
 		unique_paths = {}
 
-		MAX_SIZE     = 4096
-		POWER2_SIZES = [ 2**x for x in range(14) ]
+		MAX_SIZE      = 4096
+		MAX_FILE_SIZE = (2**20) * 10	## ten megabytes
+		POWER2_SIZES  = [ 2**x for x in range(14) ]
 
 		for image in bpy.data.images:
 			if image.size[0] > MAX_SIZE or image.size[1] > MAX_SIZE:
@@ -73,5 +78,17 @@ class ImageSizes(BaseValidator):
 					)
 				)
 
+			file_size = self.file_size( image.filepath )
+
+			if file_size > MAX_FILE_SIZE:
+				self.warning( ob=image.name,
+					select_func='image',
+					type='IMAGE:SIZE - OVER FILE SIZE',
+					message=( 'Image {name} is larger than ten megabytes ({size}kb).' )
+					.format(
+						name=image.name,
+						size=int(floor(file_size / 1024))
+					)
+				)
 
 
