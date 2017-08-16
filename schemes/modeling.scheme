@@ -1,3 +1,15 @@
 [
-	
+	"AssetFile",
+	"GreasePencil",
+	"GroupsEmpty",
+	"MeshFace",
+	"MeshNonManifold",
+	"ModelNames",
+	"ModelShapeKeys",
+	"ModelTransform",
+	"ModelVertexGroups",
+	"ObjectNames",
+	"ObjectPasses",
+	"Scene",
+	"ScreenPurgeLayouts"
 ]
