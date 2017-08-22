@@ -1,3 +1,11 @@
 [
-	
+	"AssetLibraries",
+	"Camera",
+	"GreasePencil",
+	"GroupsEmpty",
+	"ObjectConstraints",
+	"Scene",
+	"SceneConstraints",
+	"SceneLayers",
+	"ScreenPurgeLayouts"
 ]

@@ -1,15 +1,21 @@
 [
 	"AssetFile",
+	"AssetGroups",
+	"AssetLibraries",
 	"GreasePencil",
 	"GroupsEmpty",
 	"MeshFace",
+	"MeshModifiers",
 	"MeshNonManifold",
 	"ModelNames",
 	"ModelShapeKeys",
 	"ModelTransform",
 	"ModelVertexGroups",
+	"ObjectConstraints",
 	"ObjectNames",
 	"ObjectPasses",
+	"ObjectTempGeometry",
 	"Scene",
+	"SceneLayers",
 	"ScreenPurgeLayouts"
 ]

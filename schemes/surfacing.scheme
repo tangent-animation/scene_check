@@ -1,8 +1,20 @@
 [
-	"ObjectPasses",
+	"GreasePencil",
 	"ImagePaths",
 	"ImageSizes",
-	"SurfacingMaterials",
+	"MeshModifiers",
+	"ObjectConstraints",
+	"ObjectNames",
+	"ObjectTempGeometry",
+	"RigArmatureObject",
+	"RigBoneNames",
+	"RigBoneTransform",
+	"RigGroups",
+	"Scene",
+	"SceneConstraints",
+	"SceneLayers",
+	"ScreenPurgeLayouts",
 	"SurfacingConnections",
+	"SurfacingMaterials",
 	"SurfacingUVs"
 ]
