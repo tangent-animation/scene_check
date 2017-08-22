@@ -406,7 +406,7 @@ def sf_material_nodes(self):
 
 
 ## ----------------------------------------------------------------------
-def sf_data(self):
+def sf_data():
 	scene = bpy.context.scene
 
 	try:
@@ -505,6 +505,27 @@ def sf_mesh_vertex_group(self):
 
 
 ## ----------------------------------------------------------------------
+def sf_sequencer(self):
+	scene = bpy.context.scene
+	if not scene.sequence_editor:
+		return
+
+	for clip in scene.sequence_editor.sequences:
+		if clip.name == self.ob:
+			clip.select = True
+		else:
+			clip.select = False
+
+	editors = get_editors( 'SEQUENCE_EDITOR' )
+	for ed in editors:
+		for space in ed.spaces:
+			try:
+				space.view_type = 'SEQUENCER'
+			except:
+				continue
+
+
+## ----------------------------------------------------------------------
 select_functions =  {
 	'null'                : sf_null,
 	'object'              : sf_object,
@@ -514,7 +535,7 @@ select_functions =  {
 	'faces'               : sf_faces,
 	'non_manifold'        : sf_non_manifold,
 	'modifiers'           : sf_modifiers,
-	'data'         		  : sf_data,
+	'data'                : sf_data,
 	'mesh_data'           : sf_mesh_data,
 	'curve_data'          : sf_curve_data,
 	'shape_keys'          : sf_shape_keys,
@@ -524,6 +545,7 @@ select_functions =  {
 	'mesh_uvs'            : sf_mesh_uvs,
 	'armature_bone'       : sf_armature_bone,
 	'armature_constraint' : sf_armature_constraint,
+	'sequence'            : sf_sequencer,
 }
 
 def get_select_func( name ):
