@@ -95,6 +95,14 @@ class ImagePaths(BaseValidator):
 					.format( image.name, path )
 				)
 
+			if 'sandbox' in path:
+				self.error( ob=image.name,
+					select_func='image',
+					type='IMAGE:FILE IN SANDBOX',
+					message="Image {} is in a sandbox folder-- please publish (current path: {})."
+					.format( image.name, path )
+				)
+
 			if not name.startswith('img.'):
 				self.error( ob=image.name,
 					select_func='image',

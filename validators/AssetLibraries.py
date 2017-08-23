@@ -68,3 +68,11 @@ class AssetLibraries(BaseValidator):
 				except:
 					print( '-- File "{}" could not be made relative-- different drives.'.format(lib.filepath) )
 
+			if lib.filepath.count('sandbox'):
+				self.error(
+					ob=lib.name,
+					type='GENERAL:SANDBOX PATH',
+					message=('Path for library "{}" points to a sandbox file ("{}").')
+							 .format( lib.name, lib.filepath )
+				)
+
