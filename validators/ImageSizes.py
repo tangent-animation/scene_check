@@ -20,7 +20,7 @@ class ImageSizes(BaseValidator):
 		return os.stat( bpy.path.abspath(file_name) ).st_size
 
 	def process_hook( self ):
-		regex = re.compile( r"(img)\.([A-Za-z\_]+)\.(v[0-9]{4})\.(png)" )
+		regex = re.compile( r"(img)\.([A-Za-z\_]+)\.(v[0-9]{4})\.(png|exr)" )
 
 		unique_paths = {}
 
@@ -29,6 +29,8 @@ class ImageSizes(BaseValidator):
 		POWER2_SIZES  = [ 2**x for x in range(14) ]
 
 		for image in bpy.data.images:
+			filepath = os.path.abspath( bpy.path.abspath(image.filepath) )
+
 			if image.size[0] > MAX_SIZE or image.size[1] > MAX_SIZE:
 				self.error( ob=image.name,
 					select_func='image',
@@ -36,7 +38,7 @@ class ImageSizes(BaseValidator):
 					message=( 'Image {name} is too large ({sizeA}x{sizeB}). '
 							  'Maximum size is {max_size}x{max_size} pixels.' )
 					.format(
-						name=image.name,
+						name=filepath,
 						sizeA=image.size[0],
 						sizeB=image.size[1],
 						max_size=MAX_SIZE
@@ -49,7 +51,7 @@ class ImageSizes(BaseValidator):
 					type='IMAGE:SIZE - NON-SQUARE',
 					message=( 'Image {name} not square (currently {sizeA}x{sizeB} pixels).' )
 					.format(
-						name=image.name,
+						name=filepath,
 						sizeA=image.size[0],
 						sizeB=image.size[1],
 					)
@@ -61,24 +63,24 @@ class ImageSizes(BaseValidator):
 					type='IMAGE:SIZE - NON-POWER OF TWO',
 					message=( 'Image {name} size not a power of two (currently {sizeA}x{sizeB} pixels).' )
 					.format(
-						name=image.name,
+						name=filepath,
 						sizeA=image.size[0],
 						sizeB=image.size[1],
 					)
 				)
 
-			if image.depth > 32 and not image.name.endswith(('.hdr','.exr')):
+			if image.depth > 32 and not image.name.endswith( ('.hdr','.exr','.png') ):
 				self.error( ob=image.name,
 					select_func='image',
 					type='IMAGE:SIZE - OVER DEPTH',
 					message=( 'Image {name} is is not an 8bpp image (depth {depth}).')
 					.format(
-						name=image.name,
+						name=filepath,
 						depth=image.depth
 					)
 				)
 
-			file_size = self.file_size( image.filepath )
+			file_size = self.file_size( filepath )
 
 			if file_size > MAX_FILE_SIZE:
 				self.warning( ob=image.name,
@@ -86,9 +88,8 @@ class ImageSizes(BaseValidator):
 					type='IMAGE:SIZE - OVER FILE SIZE',
 					message=( 'Image {name} is larger than ten megabytes ({size}kb).' )
 					.format(
-						name=image.name,
+						name=filepath,
 						size=int(floor(file_size / 1024))
 					)
 				)
-
 

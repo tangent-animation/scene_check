@@ -20,7 +20,7 @@ class ImagePaths(BaseValidator):
 		super(ImagePaths, self).__init__()
 
 	def process_hook( self ):
-		regex = re.compile( r"(img)\.([A-Za-z\_]+)\.(v[0-9]{4})\.(png)" )
+		regex = re.compile( r"(img)\.([A-Za-z\_0-9]+)\.(v[0-9]{4})\.(png|exr)" )
 
 		unique_paths = {}
 
@@ -46,7 +46,7 @@ class ImagePaths(BaseValidator):
 				)
 				continue
 
-			path = bpy.path.abspath( image.filepath ).lower()
+			path = os.path.abspath( bpy.path.abspath(image.filepath) ).lower()
 			name = os.path.basename( path )
 
 			if len(path.strip()) == 0 or image.filepath == "T:\\T:":
@@ -111,11 +111,19 @@ class ImagePaths(BaseValidator):
 					.format( image.name, path )
 				)
 
-			if not name.endswith('.png'):
+			if not name.endswith('.png') and image.depth < 96:
 				self.error( ob=image.name,
 					select_func='image',
 					type='IMAGE:TEXTURE - FORMAT',
 					message=( 'Image {}: file {} is not a PNG file.' )
+					.format( image.name, path )
+				)
+
+			elif name.endswith('.exr') and image.depth < 96:
+				self.error( ob=image.name,
+					select_func='image',
+					type='IMAGE:TEXTURE - FORMAT',
+					message=( 'Image {}: file {} is not an EXR file.' )
 					.format( image.name, path )
 				)
 
