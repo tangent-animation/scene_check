@@ -4,7 +4,7 @@ import bpy
 bl_info = {
     "name": "Kiki's Scene Check",
     "author": "kiki",
-    "version": (0, 2, 6),
+    "version": (0, 2, 9),
     "blender": (2, 78),
     "location": "Everywhere!",
     "description": "Asset Validation Tools",
