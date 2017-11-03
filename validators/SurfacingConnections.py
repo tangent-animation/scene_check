@@ -24,10 +24,22 @@ class SurfacingConnections( BaseValidator ):
 		for item in all_meshes:
 			materials = [ x for x in item.data.materials if x ]
 
-			link_set = [ (item, mat, mat.node_tree.links) for mat in materials ]
+			link_set = [ (item, mat) for mat in materials ]
 
-			for ob, mat, links in link_set:
-				for link in links:
+			for ob, mat in link_set:
+				if not mat.node_tree:
+					self.error(
+						ob=item.name,
+						select_func='materials',
+						subob=mat.name,
+						type='SURFACE:MATERIAL - NODE TREE',
+						message=('Material "{}" on object "{}" has no connected node tree.')
+								.format( item.name, mat.name )
+					)
+
+					continue
+
+				for link in mat.node_tree.links:
 					if link.from_socket.type == 'SHADER' and not link.to_socket.type == 'SHADER':
 						self.error(
 							ob=item.name,
