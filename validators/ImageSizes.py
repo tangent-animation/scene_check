@@ -17,7 +17,12 @@ class ImageSizes(BaseValidator):
 		super(ImageSizes, self).__init__()
 
 	def file_size( self, file_name ):
-		return os.stat( bpy.path.abspath(file_name) ).st_size
+		real_path = os.path.abspath(bpy.path.abspath(file_name))
+		try:
+			return os.stat( real_path ).st_size
+		except:
+			print( '-- Unable to find file "{}"'.format(real_path) )
+			return -1
 
 	def process_hook( self ):
 		regex = re.compile( r"(img)\.([A-Za-z\_]+)\.(v[0-9]{4})\.(png|exr)" )
