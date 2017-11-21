@@ -49,7 +49,7 @@ class ModelNames(BaseValidator):
 							.format( item.name, item.data.users )
 				)
 
-			if not item.name.startswith( 'shape' ) and not item.name.startswith( 'geo' ):
+			if not item.name.startswith( 'shape' ) and not item.name.startswith( 'geo.' ):
 				##!FIXME: Use a regex to really nail down the name format
 				self.error(
 					ob=item.name,
@@ -59,12 +59,25 @@ class ModelNames(BaseValidator):
 							.format( item.name )
 				)
 
-				if not item.data.name.startswith( 'msh' ):
-					self.error(
-						ob=item.name,
-						select_func='mesh_data',
-						type='MODEL:DATA NAME',
-						message=( "{}: data does not begin with 'msh' (currently {})" )
-								.format( item.name, item.data.name )
+			if not item.data.name.startswith( 'msh.' ):
+				self.error(
+					ob=item.name,
+					select_func='mesh_data',
+					type='MODEL:DATA NAME',
+					message=( "{}: data does not begin with 'msh' (currently {})" )
+							.format( item.name, item.data.name )
+				)
+
+				if item.name.startswith('geo.'):
+					fix_code = (
+						'ob = bpy.data.objects[ "{}" ]\n'
+						'name = "msh." + ob.name.rpartition("geo.")[2]\n'
+						'ob.data.name = name\n'
+					).format( item.name )
+
+					self.auto_fix_last_error(
+						fix_code,
+						message='Correct mesh name for object {}'.format( item.name )
 					)
+
 
