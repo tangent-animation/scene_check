@@ -406,7 +406,7 @@ def sf_material_nodes(self):
 
 
 ## ----------------------------------------------------------------------
-def sf_data():
+def sf_data( self ):
 	scene = bpy.context.scene
 
 	try:
